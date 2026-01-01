@@ -1,0 +1,404 @@
+{
+  "nodes": [
+    {
+      "id": "layer_external",
+      "type": "group",
+      "x": -800,
+      "y": -600,
+      "width": 1600,
+      "height": 200,
+      "label": "🌐 外部数据源",
+      "color": "1"
+    },
+    {
+      "id": "layer_data",
+      "type": "group",
+      "x": -800,
+      "y": -350,
+      "width": 1600,
+      "height": 280,
+      "label": "📥 数据采集层 (data-service)",
+      "color": "4"
+    },
+    {
+      "id": "layer_storage",
+      "type": "group",
+      "x": -800,
+      "y": -20,
+      "width": 1600,
+      "height": 200,
+      "label": "💾 存储层",
+      "color": "3"
+    },
+    {
+      "id": "layer_compute",
+      "type": "group",
+      "x": -800,
+      "y": 230,
+      "width": 1600,
+      "height": 280,
+      "label": "⚙️ 计算层 (trading-service)",
+      "color": "5"
+    },
+    {
+      "id": "layer_presentation",
+      "type": "group",
+      "x": -800,
+      "y": 560,
+      "width": 1600,
+      "height": 280,
+      "label": "📱 展示层 (telegram-service)",
+      "color": "6"
+    },
+    {
+      "id": "binance_ws",
+      "type": "text",
+      "text": "**Binance WebSocket**\n`wss://fstream.binance.com`\n\n**核心职责**: 推送实时 1m K线数据\n**数据频率**: ~300币种/分钟\n**复杂度**: Low",
+      "x": -700,
+      "y": -550,
+      "width": 300,
+      "height": 120,
+      "color": "1"
+    },
+    {
+      "id": "binance_rest",
+      "type": "text",
+      "text": "**Binance REST API**\n`api.binance.com`\n\n**核心职责**: 历史K线补齐 + 期货指标\n**数据类型**: OI/资金费率/多空比\n**复杂度**: Low",
+      "x": 100,
+      "y": -550,
+      "width": 300,
+      "height": 120,
+      "color": "1"
+    },
+    {
+      "id": "ws_collector",
+      "type": "text",
+      "text": "**WSCollector**\n`collectors/ws.py`\n\n**核心职责**: WebSocket K线实时采集，3秒窗口批量写入\n**关键交互**:\n- 调用: BinanceWSAdapter, TimescaleAdapter\n- 被用于: 实时数据入库\n**复杂度**: Medium\n**特性**: 自动重连 + 缺口巡检",
+      "x": -700,
+      "y": -300,
+      "width": 320,
+      "height": 200,
+      "color": "4"
+    },
+    {
+      "id": "metrics_collector",
+      "type": "text",
+      "text": "**MetricsCollector**\n`collectors/metrics.py`\n\n**核心职责**: 采集期货市场指标\n**关键交互**:\n- 调用: Binance REST API\n- 被用于: OI/资金费率/多空比\n**复杂度**: Medium",
+      "x": -300,
+      "y": -300,
+      "width": 300,
+      "height": 180,
+      "color": "4"
+    },
+    {
+      "id": "backfill",
+      "type": "text",
+      "text": "**BackfillCollector**\n`collectors/backfill.py`\n\n**核心职责**: 历史K线数据补齐\n**关键交互**:\n- 调用: Binance REST API\n- 被用于: 缺口修复\n**复杂度**: High (36KB)",
+      "x": 100,
+      "y": -300,
+      "width": 300,
+      "height": 180,
+      "color": "4"
+    },
+    {
+      "id": "adapters",
+      "type": "text",
+      "text": "**Adapters**\n`adapters/`\n\n**核心职责**: 外部服务适配\n- ccxt: 交易所统一接口\n- cryptofeed: WebSocket封装\n- timescale: 数据库写入\n**复杂度**: Medium",
+      "x": 500,
+      "y": -300,
+      "width": 280,
+      "height": 180,
+      "color": "4"
+    },
+    {
+      "id": "timescaledb",
+      "type": "text",
+      "text": "**TimescaleDB**\n`market_data.candles_*`\n\n**核心职责**: 时序数据存储\n**表结构**:\n- candles_1m (基础表)\n- candles_5m/15m/1h/4h/1d/1w (连续聚合)\n- metrics_5m (期货指标)\n**特性**: 自动压缩 + 180天保留",
+      "x": -500,
+      "y": 30,
+      "width": 340,
+      "height": 160,
+      "color": "3"
+    },
+    {
+      "id": "sqlite_cache",
+      "type": "text",
+      "text": "**SQLite Cache**\n`market_data.db`\n\n**核心职责**: 指标计算结果缓存\n**特性**: WAL模式 + 本地快速读取\n**被用于**: telegram-service 排行榜",
+      "x": 200,
+      "y": 30,
+      "width": 300,
+      "height": 140,
+      "color": "3"
+    },
+    {
+      "id": "engine",
+      "type": "text",
+      "text": "**Engine**\n`core/engine.py`\n\n**核心职责**: 指标计算引擎（高性能版）\n**关键交互**:\n- 调用: DataReader, 所有Indicators\n- 被用于: 定时任务/一次性计算\n**复杂度**: High (17KB)\n**特性**: 多进程并行 + 进程池复用",
+      "x": -700,
+      "y": 280,
+      "width": 340,
+      "height": 200,
+      "color": "5"
+    },
+    {
+      "id": "async_engine",
+      "type": "text",
+      "text": "**AsyncFullEngine**\n`core/async_full_engine.py`\n\n**核心职责**: 完全异步持续运行引擎\n**复杂度**: High (25KB)\n**特性**: 高低优先级队列分离",
+      "x": -300,
+      "y": 280,
+      "width": 300,
+      "height": 140,
+      "color": "5"
+    },
+    {
+      "id": "indicators",
+      "type": "text",
+      "text": "**Indicators**\n`indicators/batch/` + `indicators/incremental/`\n\n**核心职责**: 38个技术指标计算\n**批量指标**: VPVR, 布林带, 趋势线, K线形态...\n**增量指标**: EMA, MACD, KDJ, ATR, CVD...\n**复杂度**: High\n**特性**: @register 装饰器自动注册",
+      "x": 100,
+      "y": 280,
+      "width": 340,
+      "height": 200,
+      "color": "5"
+    },
+    {
+      "id": "data_reader",
+      "type": "text",
+      "text": "**DataReader**\n`db/reader.py`\n\n**核心职责**: 从TimescaleDB读取K线\n**特性**: 连接池 + 多周期并行查询\n**复杂度**: Medium (14KB)",
+      "x": 500,
+      "y": 280,
+      "width": 280,
+      "height": 140,
+      "color": "5"
+    },
+    {
+      "id": "telegram_bot",
+      "type": "text",
+      "text": "**TelegramBot**\n`bot/app.py`\n\n**核心职责**: Telegram Bot 主程序\n**关键交互**:\n- 调用: RankingRegistry, DataProvider\n- 被用于: 用户交互入口\n**复杂度**: Critical (265KB)\n**⚠️ 潜在风险**: 技术债务较高，建议拆分",
+      "x": -700,
+      "y": 610,
+      "width": 360,
+      "height": 200,
+      "color": "6"
+    },
+    {
+      "id": "ranking_registry",
+      "type": "text",
+      "text": "**RankingRegistry**\n`cards/registry.py`\n\n**核心职责**: 排行榜卡片自动注册\n**关键交互**:\n- 调用: 所有 RankingCard 插件\n- 被用于: Bot 菜单生成\n**复杂度**: Medium (15KB)",
+      "x": -250,
+      "y": 610,
+      "width": 300,
+      "height": 180,
+      "color": "6"
+    },
+    {
+      "id": "ranking_cards",
+      "type": "text",
+      "text": "**RankingCards**\n`cards/basic/` + `cards/advanced/` + `cards/futures/`\n\n**核心职责**: 40+ 排行榜卡片插件\n**分类**:\n- basic: KDJ, RSI, MACD, 布林带...\n- advanced: EMA, VPVR, VWAP, 趋势线...\n- futures: 持仓, 资金费率, 多空比...\n**复杂度**: Medium",
+      "x": 120,
+      "y": 610,
+      "width": 340,
+      "height": 200,
+      "color": "6"
+    },
+    {
+      "id": "data_provider",
+      "type": "text",
+      "text": "**DataProvider**\n`cards/data_provider.py`\n\n**核心职责**: 排行榜数据访问层\n**数据源**: SQLite + CSV\n**复杂度**: Medium (19KB)",
+      "x": 530,
+      "y": 610,
+      "width": 260,
+      "height": 140,
+      "color": "6"
+    },
+    {
+      "id": "libs_common",
+      "type": "text",
+      "text": "**libs/common**\n`utils/路径助手.py`\n\n**核心职责**: 共享工具函数\n- 仓库/服务路径解析\n- 目录确保\n**被用于**: 所有服务",
+      "x": -800,
+      "y": 900,
+      "width": 260,
+      "height": 140,
+      "color": "2"
+    },
+    {
+      "id": "libs_database",
+      "type": "text",
+      "text": "**libs/database**\n`db/schema/*.sql`\n\n**核心职责**: 数据库Schema定义\n- TimescaleDB 超表\n- 连续聚合\n- 压缩/保留策略\n**被用于**: data-service",
+      "x": -480,
+      "y": 900,
+      "width": 260,
+      "height": 140,
+      "color": "2"
+    },
+    {
+      "id": "user",
+      "type": "text",
+      "text": "**👤 用户**\n\nTelegram 客户端",
+      "x": -700,
+      "y": 1100,
+      "width": 160,
+      "height": 80,
+      "color": "0"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_binance_ws_to_ws_collector",
+      "fromNode": "binance_ws",
+      "fromSide": "bottom",
+      "toNode": "ws_collector",
+      "toSide": "top",
+      "label": "WebSocket"
+    },
+    {
+      "id": "edge_binance_rest_to_metrics",
+      "fromNode": "binance_rest",
+      "fromSide": "bottom",
+      "toNode": "metrics_collector",
+      "toSide": "top",
+      "label": "REST API"
+    },
+    {
+      "id": "edge_binance_rest_to_backfill",
+      "fromNode": "binance_rest",
+      "fromSide": "bottom",
+      "toNode": "backfill",
+      "toSide": "top",
+      "label": "REST API"
+    },
+    {
+      "id": "edge_ws_to_adapters",
+      "fromNode": "ws_collector",
+      "fromSide": "right",
+      "toNode": "adapters",
+      "toSide": "left"
+    },
+    {
+      "id": "edge_metrics_to_adapters",
+      "fromNode": "metrics_collector",
+      "fromSide": "right",
+      "toNode": "adapters",
+      "toSide": "left"
+    },
+    {
+      "id": "edge_backfill_to_adapters",
+      "fromNode": "backfill",
+      "fromSide": "right",
+      "toNode": "adapters",
+      "toSide": "left"
+    },
+    {
+      "id": "edge_ws_to_timescale",
+      "fromNode": "ws_collector",
+      "fromSide": "bottom",
+      "toNode": "timescaledb",
+      "toSide": "top",
+      "label": "批量写入"
+    },
+    {
+      "id": "edge_metrics_to_timescale",
+      "fromNode": "metrics_collector",
+      "fromSide": "bottom",
+      "toNode": "timescaledb",
+      "toSide": "top"
+    },
+    {
+      "id": "edge_backfill_to_timescale",
+      "fromNode": "backfill",
+      "fromSide": "bottom",
+      "toNode": "timescaledb",
+      "toSide": "top"
+    },
+    {
+      "id": "edge_timescale_to_reader",
+      "fromNode": "timescaledb",
+      "fromSide": "bottom",
+      "toNode": "data_reader",
+      "toSide": "top",
+      "label": "连接池读取"
+    },
+    {
+      "id": "edge_reader_to_engine",
+      "fromNode": "data_reader",
+      "fromSide": "left",
+      "toNode": "engine",
+      "toSide": "right"
+    },
+    {
+      "id": "edge_engine_to_indicators",
+      "fromNode": "engine",
+      "fromSide": "right",
+      "toNode": "indicators",
+      "toSide": "left",
+      "label": "多进程计算"
+    },
+    {
+      "id": "edge_async_to_indicators",
+      "fromNode": "async_engine",
+      "fromSide": "right",
+      "toNode": "indicators",
+      "toSide": "left"
+    },
+    {
+      "id": "edge_engine_to_sqlite",
+      "fromNode": "engine",
+      "fromSide": "top",
+      "toNode": "sqlite_cache",
+      "toSide": "bottom",
+      "label": "写入结果"
+    },
+    {
+      "id": "edge_sqlite_to_provider",
+      "fromNode": "sqlite_cache",
+      "fromSide": "bottom",
+      "toNode": "data_provider",
+      "toSide": "top",
+      "label": "读取指标"
+    },
+    {
+      "id": "edge_provider_to_cards",
+      "fromNode": "data_provider",
+      "fromSide": "left",
+      "toNode": "ranking_cards",
+      "toSide": "right"
+    },
+    {
+      "id": "edge_cards_to_registry",
+      "fromNode": "ranking_cards",
+      "fromSide": "left",
+      "toNode": "ranking_registry",
+      "toSide": "right",
+      "label": "自动注册"
+    },
+    {
+      "id": "edge_registry_to_bot",
+      "fromNode": "ranking_registry",
+      "fromSide": "left",
+      "toNode": "telegram_bot",
+      "toSide": "right"
+    },
+    {
+      "id": "edge_user_to_bot",
+      "fromNode": "user",
+      "fromSide": "top",
+      "toNode": "telegram_bot",
+      "toSide": "bottom",
+      "label": "命令/回调"
+    },
+    {
+      "id": "edge_libs_common_to_all",
+      "fromNode": "libs_common",
+      "fromSide": "top",
+      "toNode": "telegram_bot",
+      "toSide": "bottom"
+    },
+    {
+      "id": "edge_libs_db_to_timescale",
+      "fromNode": "libs_database",
+      "fromSide": "top",
+      "toNode": "timescaledb",
+      "toSide": "bottom",
+      "label": "Schema定义"
+    }
+  ]
+}
