@@ -52,3 +52,11 @@ libs/external/
 data_export/
 libs/database/csv/downloads/
 libs/database/telegram-cards/
+# order-service
+services/order-service/.env
+services/order-service/backups/
+services/order-service/docs/
+services/order-service/AGENTS.md
+services/order-service/bugs.jsonl
+services/order-service/services/*/.venv/
+services/order-service/services/*/logs/
