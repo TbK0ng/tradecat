@@ -212,7 +212,8 @@ def get_source_latest(interval: str) -> datetime:
         with psycopg.connect(DB_URL, row_factory=dict_row) as conn:
             row = conn.execute(f"SELECT MAX(bucket_ts) as latest FROM market_data.{table}").fetchone()
             return row["latest"] if row else None
-    except:
+    except Exception as e:
+        log(f"查询 {table} 最新时间失败: {e}")
         return None
 
 
@@ -228,7 +229,8 @@ def get_indicator_latest(interval: str) -> datetime:
             ts_str = row[0].replace("+00:00", "").replace("T", " ")
             return datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)
         return None
-    except:
+    except Exception as e:
+        log(f"查询 SQLite 指标 {interval} 最新时间失败: {e}")
         return None
 
 
@@ -248,7 +250,8 @@ def check_need_calc() -> list:
                 need_calc.append(interval)
             
             last_computed[interval] = source_ts
-        except:
+        except Exception as e:
+            log(f"检查 {interval} 需要计算失败: {e}")
             need_calc.append(interval)
     
     return need_calc
