@@ -48,10 +48,11 @@ init_service() {
         pip install -q -e .
     fi
     
-    # 3. 创建配置文件
+    # 3. 创建配置文件（权限 600）
     if [ -f "config/.env.example" ] && [ ! -f "config/.env" ]; then
         cp config/.env.example config/.env
-        info "已创建 config/.env（请编辑填入真实配置）"
+        chmod 600 config/.env
+        info "已创建 config/.env（权限 600，请编辑填入真实配置）"
     fi
     
     # 4. 创建运行时目录
