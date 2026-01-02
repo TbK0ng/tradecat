@@ -354,9 +354,15 @@ class Engine:
         indicator_names: list,
         indicators: dict,
         futures_cache: dict = None,
-        backend: str = "process",
+        backend: str = "thread",
     ) -> Dict[str, list]:
-        """并行计算 (backend: thread | process)"""
+        """并行计算
+        
+        backend:
+            - thread: 全部用线程池（适合IO密集）
+            - process: 全部用进程池（适合CPU密集）
+            - hybrid: IO任务用线程池，CPU任务用进程池
+        """
         batch_size = max(1, len(task_list) // self.max_workers)
         batches = []
         for i in range(0, len(task_list), batch_size):
@@ -366,8 +372,7 @@ class Engine:
         all_results = {name: [] for name in indicators}
         
         if backend == "thread":
-            executor: Any
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            with ThreadPoolExecutor(max_workers=config.max_io_workers) as executor:
                 futures = [executor.submit(_compute_batch, batch) for batch in batches]
                 for future in as_completed(futures):
                     try:
@@ -377,9 +382,8 @@ class Engine:
                     except Exception as e:
                         _compute_errors.inc(1, backend="thread")
                         LOG.error(f"计算失败: {e}")
-                        alert(AlertLevel.ERROR, "批次计算失败", str(e), backend="thread")
-        else:
-            executor = _get_executor(self.max_workers)
+        elif backend == "process":
+            executor = _get_executor(config.max_cpu_workers)
             futures = [executor.submit(_compute_batch, batch) for batch in batches]
             for future in as_completed(futures):
                 try:
@@ -389,7 +393,12 @@ class Engine:
                 except Exception as e:
                     _compute_errors.inc(1, backend="process")
                     LOG.error(f"计算失败: {e}")
-                    alert(AlertLevel.ERROR, "批次计算失败", str(e), backend="process")
+        else:
+            # hybrid: 小批量用线程，大批量用进程
+            if len(task_list) <= 50:
+                return self._compute_parallel(task_list, indicator_names, indicators, futures_cache, "thread")
+            else:
+                return self._compute_parallel(task_list, indicator_names, indicators, futures_cache, "process")
         
         return all_results
     

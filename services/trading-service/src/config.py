@@ -48,8 +48,12 @@ class Config:
     default_lookback: int = 300
     max_workers: int = field(default_factory=lambda: int(os.getenv("MAX_WORKERS", "6")))
     exchange: str = "binance_futures_um"
-    # 计算后端: thread | process
+    # 计算后端: thread | process | hybrid（IO用线程，CPU用进程）
     compute_backend: str = field(default_factory=lambda: os.getenv("COMPUTE_BACKEND", "thread").lower())
+    
+    # IO/CPU 拆分执行器配置
+    max_io_workers: int = field(default_factory=lambda: int(os.getenv("MAX_IO_WORKERS", "8")))
+    max_cpu_workers: int = field(default_factory=lambda: int(os.getenv("MAX_CPU_WORKERS", "4")))
     
     # K线指标周期
     kline_intervals: List[str] = field(default_factory=lambda: _parse_intervals(

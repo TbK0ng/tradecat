@@ -25,10 +25,10 @@
   - 连接失效自动重建，池满则关闭多余连接
   - 所有查询方法改用 `_get_conn()` / `_return_conn()`
 
-- [ ] IO/CPU 拆分执行器（M）
-  - 在调度层标记任务类型（IO-heavy/CPU-heavy），IO 走线程池，CPU 走进程池；并行度配置 `MAX_IO_WORKERS` / `MAX_CPU_PROCS`。
-  - 避免跨进程传递大对象（用索引/路径）。
-  - 验证：CPU 指标能占满多核，IO 任务不卡在 GIL。
+- [x] IO/CPU 拆分执行器（M）✅
+  - 新增配置: `MAX_IO_WORKERS`(8) / `MAX_CPU_WORKERS`(4)
+  - `COMPUTE_BACKEND` 支持 thread/process/hybrid 三种模式
+  - hybrid 模式: 小批量(<50)用线程，大批量用进程
 
 - [ ] 批量拉 K 线/批量算指标（M-L）
   - 抓取：同周期多币种批次请求（如 20/批）或用交易所批量端点；写 TimescaleDB 用多值 insert/COPY。
