@@ -968,6 +968,7 @@ class UserRequestHandler:
             [
                 InlineKeyboardButton("🏠 主菜单", callback_data="main_menu"),
                 InlineKeyboardButton("📊 数据面板", callback_data="ranking_menu"),
+                InlineKeyboardButton("🔍 币种查询", callback_data="coin_query"),
                 InlineKeyboardButton("ℹ️ 帮助", callback_data="help"),
             ],
         ]
@@ -3834,6 +3835,23 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif query.data == "ranking_menu_nop":
             # 提示按钮，点击无响应
             await query.answer()
+
+        elif query.data == "coin_query":
+            # 币种查询入口
+            text = (
+                "🔍 *币种查询*\n\n"
+                "请发送币种名称触发查询：\n"
+                "• `BTC!` - 查询比特币\n"
+                "• `ETH!` - 查询以太坊\n"
+                "• `SOL!` - 查询 Solana\n\n"
+                "格式：`币种名!`（加感叹号）"
+            )
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("🏠 返回主菜单", callback_data="main_menu"),
+                ]
+            ])
+            await query.edit_message_text(text, reply_markup=keyboard, parse_mode='Markdown')
 
         elif query.data == "ranking_menu":
             current_group = user_handler.user_states.get("ranking_group", "basic")
