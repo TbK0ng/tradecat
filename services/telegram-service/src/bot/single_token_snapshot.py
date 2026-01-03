@@ -510,7 +510,7 @@ def render_pattern_panel(symbol: str, enabled_periods: Dict[str, bool] | None = 
         enabled_periods = {"1m": False, "5m": False, "15m": True, "1h": True, "4h": True, "1d": False, "1w": False}
     
     periods = ["1m", "5m", "15m", "1h", "4h", "1d", "1w"]
-    lines = [f"🕯️ {sym} K线形态分析", "```"]
+    lines = [f"🕯️ {sym} K线形态分析"]
     
     for p in periods:
         if not enabled_periods.get(p, False):
@@ -543,16 +543,16 @@ def render_pattern_panel(symbol: str, enabled_periods: Dict[str, bool] | None = 
                 neutral.append(pat)
         
         lines.append(f"📊 {p} ({count}个形态)")
+        lines.append("```")
         if bullish:
             lines.append(f"🟢 {', '.join(bullish)}")
         if bearish:
             lines.append(f"🔴 {', '.join(bearish)}")
         if neutral:
             lines.append(f"⚪ {', '.join(neutral)}")
-        lines.append("")
+        lines.append("```")
     
-    lines.append("```")
-    if len(lines) == 3:  # 只有标题和代码块
+    if len(lines) == 1:  # 只有标题
         return f"🕯️ {sym} K线形态分析\n```\n暂无形态数据\n```"
     
     return "\n".join(lines)
