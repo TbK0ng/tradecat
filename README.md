@@ -47,18 +47,30 @@
 
 ## 📖 目录
 
+- [💰 救救孩子](#-救救孩子)
 - [🚀 快速开始](#-快速开始)
-- [✨ 核心特性](#-核心特性)
 - [🏗️ 架构设计](#️-架构设计)
-- [📊 数据规模](#-数据规模)
-- [📈 技术指标](#-技术指标)
-- [🤖 Telegram Bot](#-telegram-bot)
+- [✨ 核心特性](#-核心特性)
+- [📊 数据与功能](#-数据与功能)
 - [📁 目录结构](#-目录结构)
 - [🔧 运维指南](#-运维指南)
 - [📞 联系方式](#-联系方式)
-- [💰 救救孩子](#-救救孩子)
 
 > 🤖 **从零开始？** 复制这行到 AI 助手：`按照 https://github.com/tukuaiai/tradecat/blob/main/README.md 的说明帮我安装 TradeCat`
+
+---
+
+## 💰 救救孩子
+
+救救孩子，感谢了，好人一生平安🙏🙏🙏
+
+- **币安 UID**: `572155580`
+- **Tron (TRC20)**: `TQtBXCSTwLFHjBqTS4rNUp7ufiGx51BRey`
+- **Solana**: `HjYhozVf9AQmfv7yv79xSNs6uaEU5oUk2USasYQfUYau`
+- **Ethereum (ERC20)**: `0xa396923a71ee7D9480b346a17dDeEb2c0C287BBC`
+- **BNB Smart Chain (BEP20)**: `0xa396923a71ee7D9480b346a17dDeEb2c0C287BBC`
+- **Bitcoin**: `bc1plslluj3zq3snpnnczplu7ywf37h89dyudqua04pz4txwh8z5z5vsre7nlm`
+- **Sui**: `0xb720c98a48c77f2d49d375932b2867e793029e6337f1562522640e4f84203d2e`
 
 ---
 
@@ -228,7 +240,7 @@ vim config/.env
 
 ---
 
-<details open>
+<details>
 <summary><strong>点击展开👉 ✨ 核心特性</strong></summary>
 
 <table>
@@ -382,8 +394,10 @@ vim config/.env
 
 ---
 
-<details open>
-<summary><strong>点击展开👉 📊 数据规模</strong></summary>
+<details>
+<summary><strong>点击展开👉 📊 数据与功能</strong></summary>
+
+### 📊 数据规模
 
 **🔗 历史数据下载**: [HuggingFace 数据集](https://huggingface.co/datasets/123olp/binance-futures-ohlcv-2018-2026)
 
@@ -474,10 +488,7 @@ zstd -d futures_metrics_5m.bin.zst -c | psql -h localhost -p 5433 -U postgres -d
 
 </details>
 
----
-
-<details open>
-<summary><strong>点击展开👉 📈 技术指标</strong></summary>
+### 📈 技术指标
 
 <details>
 <summary><strong>点击展开👉 🔥 趋势指标 (8个)</strong></summary>
@@ -592,20 +603,15 @@ K线维度:
   - 多空比极端 (>2.0 或 <0.5)
 ```
 
-</details>
+### 🤖 Telegram Bot
 
----
-
-<details open>
-<summary><strong>点击展开👉 🤖 Telegram Bot</strong></summary>
-
-### 功能概览
+#### 功能概览
 
 <table>
 <tr>
 <td width="50%">
 
-#### 📊 排行榜卡片 (20+种)
+##### 📊 排行榜卡片 (20+种)
 
 | 类别 | 卡片 |
 |:---|:---|
@@ -652,7 +658,7 @@ K线维度:
 └────────────────────┴────────────────────┘
 ```
 
-### 单币查询面板
+#### 单币查询面板
 
 1. **基础面板** - 布林带、KDJ、MACD、RSI、OBV、量比
 2. **期货面板** - 持仓量、多空比、情绪指标
@@ -663,7 +669,7 @@ K线维度:
 
 ---
 
-<details open>
+<details>
 <summary><strong>点击展开👉 📁 目录结构</strong></summary>
 
 ```
@@ -738,7 +744,7 @@ tradecat/
 
 ---
 
-<details open>
+<details>
 <summary><strong>点击展开👉 🔧 运维指南</strong></summary>
 
 ### 服务管理
@@ -990,20 +996,6 @@ PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -c "\l"
 - **Telegram 频道**: [@tradecat_ai_channel](https://t.me/tradecat_ai_channel)
 - **Telegram 交流群**: [@glue_coding](https://t.me/glue_coding)
 - **Twitter/X**: [@123olp](https://x.com/123olp)
-
----
-
-## 💰 救救孩子
-
-救救孩子，感谢了，好人一生平安🙏🙏🙏
-
-- **币安 UID**: `572155580`
-- **Tron (TRC20)**: `TQtBXCSTwLFHjBqTS4rNUp7ufiGx51BRey`
-- **Solana**: `HjYhozVf9AQmfv7yv79xSNs6uaEU5oUk2USasYQfUYau`
-- **Ethereum (ERC20)**: `0xa396923a71ee7D9480b346a17dDeEb2c0C287BBC`
-- **BNB Smart Chain (BEP20)**: `0xa396923a71ee7D9480b346a17dDeEb2c0C287BBC`
-- **Bitcoin**: `bc1plslluj3zq3snpnnczplu7ywf37h89dyudqua04pz4txwh8z5z5vsre7nlm`
-- **Sui**: `0xb720c98a48c77f2d49d375932b2867e793029e6337f1562522640e4f84203d2e`
 
 ---
 
