@@ -119,7 +119,8 @@ def test_ops_audit_flags_service_residue_and_runtime_process(tmp_path: Path, mon
     ss_fixture.write_text("LISTEN 0 1 127.0.0.1:8765 0.0.0.0:* users:(('python',pid=7,fd=3))\n", encoding="utf-8")
     cron_fixture.write_text("* * * * * bash .github/scripts/start-auto-paper.sh _cycle\n", encoding="utf-8")
     tmux_fixture.write_text(
-        "0:3.1 bash /workspace/example-user/projects/tradecat-public/.github/scripts/start-auto-paper.sh\n", encoding="utf-8"
+        "0:3.1 bash /workspace/example-user/projects/tradecat-public/.github/scripts/start-auto-paper.sh\n",
+        encoding="utf-8",
     )
     monkeypatch.setenv("TRADECAT_OPS_AUDIT_START_SCRIPT", str(start_script))
     monkeypatch.setenv("TRADECAT_OPS_AUDIT_SYSTEMCTL_BIN", str(systemctl))
