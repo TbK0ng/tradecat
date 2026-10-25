@@ -6,7 +6,7 @@
 - 本质：旧产品面会变成组织惯性；当目标形态改变时，留下“可运行但不再核心”的入口会持续消耗维护预算并误导 Agent。
 - 规则：TradeCat Public 当前只保留公开信号源、Agent context/thesis contract、paper/watch、ledger、risk、reports、monitor 和验证门禁；TUI/install/cache-browser 不再是默认产品面。
 - 防复发：guard、manifest、README、AGENTS、Skill references 和 CI 必须同时禁止退役路径复活。
-- 验证：每次架构变动都运行 `bash scripts/guard_public_local_files.sh`、`bash scripts/agent-smoke.sh`、`bash scripts/verify.sh` 和 `bash scripts/validate-skill.sh --strict`。
+- 验证：每次架构变动都运行 `bash .github/scripts/guard_public_local_files.sh`、`bash .github/scripts/agent-smoke.sh`、`bash .github/scripts/verify.sh` 和 `bash .github/scripts/validate-skill.sh --strict`。
 
 ## 2026-05-08 Agent Consumption Needs A Machine Contract, Not More Prose
 
@@ -14,7 +14,7 @@
 - 本质：面向人的 README 不能替代面向机器的 contract；Agent 最依赖的是可机读 manifest、稳定 schema、退出码和风险分类。
 - 规则：新增 Agent 入口时，先更新 `agents/manifest.json`，再更新平台 profile；profile 只能指向 manifest，不能复制第二份真相。
 - 防复发：所有广告给 Agent 解析的 JSON 必须带 `schema/schema_version`；失败必须是 object error；非交互失败必须返回非 0。
-- 验证：每次改 CLI JSON、request.py、wrapper、manifest 或 references，都必须跑 `bash scripts/agent-smoke.sh` 和 `pytest tests/test_*contract*.py tests/test_exit_codes.py`。
+- 验证：每次改 CLI JSON、request.py、wrapper、manifest 或 references，都必须跑 `bash .github/scripts/agent-smoke.sh` 和 `pytest .github/tests/test_*contract*.py .github/tests/test_exit_codes.py`。
 
 ## 2026-05-08 Stable Error Objects Must Also Be Semantically Correct
 
@@ -53,5 +53,5 @@
 - 现象：自主纸面交易任务完成后只做了实现和验证，`auto-paper` 服务没有常驻运行，状态为 `not_running`。
 - 本质：工程交付和运行交付是两件事；如果用户目标是 autonomous trader，纸面 run-loop 停止就等于目标未进入运行态。
 - 规则：当任务目标明确包含“持续纸面交易 / autonomous paper trader / 常驻 loop”时，`paper_service_not_running` 必须作为阻塞状态处理，不能在汇报中当作普通信息略过。
-- 防复发：交付前必须检查 `bash scripts/start-auto-paper.sh status --json` 和 `tradecat auto health-report --json`；若需要常驻，应由 operator/Hermes 明确执行 `start` 或 systemd/timer keepalive，并持续检查 heartbeat。
-- 验证：常驻目标的验收必须包含 `running=true`、heartbeat 未 stale、`real_orders=false`、`signed_requests=false`、`reads_api_keys=false`，且所有运行态只在 gitignored `.runtime/auto-paper/`。
+- 防复发：交付前必须检查 `bash .github/scripts/start-auto-paper.sh status --json` 和 `tradecat auto health-report --json`；若需要常驻，应由 operator/Hermes 明确执行 `start` 或 systemd/timer keepalive，并持续检查 heartbeat。
+- 验证：常驻目标的验收必须包含 `running=true`、heartbeat 未 stale、`real_orders=false`、`signed_requests=false`、`reads_api_keys=false`，且所有运行态只在 gitignored `.github/.runtime/auto-paper/`。

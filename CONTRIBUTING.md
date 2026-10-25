@@ -40,27 +40,27 @@ perf(scope): improve hot path
 - 影响范围和回滚方式。
 - 是否触碰交易安全边界。
 
-PR 不应提交 `.runtime/`、`.tradecat/`、`.venv/`、`.hermes/`、`.tools/`、`project/`、`tasks/` 或任何凭证、日志、账本、缓存。
+PR 不应提交 `.github/.runtime/`、`.tradecat/`、`.github/.venv/`、`.github/.hermes/`、`.github/.tools/`、`project/`、`tasks/` 或任何凭证、日志、账本、缓存。
 
 ## 本地验证
 
 改动提交前至少运行：
 
 ```bash
-bash scripts/agent-smoke.sh
-bash scripts/verify.sh
-bash scripts/validate-skill.sh --strict
-bash scripts/security-scan.sh
-bash scripts/supply-chain-audit.sh
+bash .github/scripts/agent-smoke.sh
+bash .github/scripts/verify.sh
+bash .github/scripts/validate-skill.sh --strict
+bash .github/scripts/security-scan.sh
+bash .github/scripts/supply-chain-audit.sh
 git diff --check
 ```
 
 定向开发时可先运行：
 
 ```bash
-PYTHONPATH=src python3 -m pytest tests/test_pipeline.py tests/test_service.py tests/test_paper_ledger.py
-PYTHONPATH=src ruff check src tests
-PYTHONPATH=src ruff format --check src tests scripts
+PYTHONPATH=.github/src python3 -m pytest .github/tests/test_pipeline.py .github/tests/test_service.py .github/tests/test_paper_ledger.py
+PYTHONPATH=.github/src ruff check .github/src .github/tests
+PYTHONPATH=.github/src ruff format --check .github/src .github/tests .github/scripts
 ```
 
 ## Review 标准

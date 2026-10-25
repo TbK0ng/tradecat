@@ -4,8 +4,13 @@
 
 ## Unreleased
 
+- Clarified the core product mission as an autonomous Agent trading loop public-readonly + paper/watch layer for USDT futures research and iterative strategy review.
 - Added repository collaboration governance: contribution rules, PR template, CODEOWNERS, editor settings, environment example, Dependabot config, and standard docs entrypoints.
 - Added formatting and dependency policy gates to keep future changes reviewable.
+- Refactored the TradeCat Auto CLI/service internals to reduce duplicated command and cycle-input plumbing while preserving paper/watch contracts.
+- Refactored paper ledger execution and position-management internals into smaller builders and action handlers without changing ledger behavior.
+- Hardened CLI-level failures so invalid operator input returns stable JSON (`invalid_cli_input`) instead of a Python traceback.
+- Added a clean WSL2 Docker Compose runtime for isolated Ubuntu Hermes + TradeCat operation without mounting host `~/.hermes`.
 
 ## v0.1.3 - 2026-05-18
 

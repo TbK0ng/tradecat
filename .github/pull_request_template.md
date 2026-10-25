@@ -8,11 +8,11 @@
 
 ## How tested
 
-- [ ] `bash scripts/agent-smoke.sh`
-- [ ] `bash scripts/verify.sh`
-- [ ] `bash scripts/validate-skill.sh --strict`
-- [ ] `bash scripts/security-scan.sh`
-- [ ] `bash scripts/supply-chain-audit.sh`
+- [ ] `bash .github/scripts/agent-smoke.sh`
+- [ ] `bash .github/scripts/verify.sh`
+- [ ] `bash .github/scripts/validate-skill.sh --strict`
+- [ ] `bash .github/scripts/security-scan.sh`
+- [ ] `bash .github/scripts/supply-chain-audit.sh`
 - [ ] `git diff --check`
 
 ## Safety boundary

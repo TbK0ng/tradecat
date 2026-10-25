@@ -1,0 +1,53 @@
+services:
+  tradecat-hermes:
+    build:
+      context: .
+      dockerfile: .github/docker/tradecat-hermes-clean/Dockerfile
+      args:
+        HERMES_REPO: ${HERMES_REPO:-https://github.com/NousResearch/hermes-agent.git}
+        HERMES_REF: ${HERMES_REF:-main}
+        HERMES_EXTRAS: ${HERMES_EXTRAS:-messaging,mcp,cli}
+        CODEX_NPM_PACKAGE: ${CODEX_NPM_PACKAGE:-@openai/codex}
+        CODEX_VERSION: ${CODEX_VERSION:-0.133.0}
+    image: tradecat-hermes-clean:latest
+    container_name: tradecat-hermes-clean
+    restart: "no"
+    working_dir: /workspace/tradecat-public
+    env_file:
+      - path: ./.github/docker/tradecat-hermes-clean/container.env
+        required: false
+    environment:
+      HERMES_HOME: /home/ubuntu/.hermes
+      CODEX_HOME: /home/ubuntu/.codex
+      TRADECAT_REPO: /workspace/tradecat-public
+      TRADECAT_PROJECT_SEED: /opt/tradecat-public-seed
+      TRADECAT_VENV: /opt/tradecat-venv
+      TRADECAT_RUNTIME_DIR: /home/ubuntu/.tradecat-runtime/auto-paper
+      TRADECAT_AUTO_PAPER_RUNTIME_DIR: /home/ubuntu/.tradecat-runtime/auto-paper
+      PYTHONUNBUFFERED: "1"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - tradecat_project:/workspace/tradecat-public
+      - tradecat_hermes_home:/home/ubuntu/.hermes
+      - tradecat_codex_home:/home/ubuntu/.codex
+      - tradecat_tradecat_venv:/opt/tradecat-venv
+      - tradecat_runtime:/home/ubuntu/.tradecat-runtime
+    ports:
+      - "127.0.0.1:8765:8765"
+      - "127.0.0.1:2222:22"
+    cpus: "2.0"
+    mem_limit: 4g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: ["sleep", "infinity"]
+
+volumes:
+  tradecat_project:
+  tradecat_hermes_home:
+  tradecat_codex_home:
+  tradecat_tradecat_venv:
+  tradecat_runtime:

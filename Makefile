@@ -9,49 +9,49 @@ install-dev:
 	$(PYTHON) -m pip install -c constraints.txt -e ".[dev]"
 
 test:
-	PYTHONPATH=src $(PYTHON) -m pytest -q
+	PYTHONPATH=.github/src $(PYTHON) -m pytest -q
 
 lint:
-	PYTHONPATH=src $(PYTHON) -m ruff check src tests
+	PYTHONPATH=.github/src $(PYTHON) -m ruff check .github/src .github/tests
 
 format:
-	$(PYTHON) -m ruff format src tests scripts
+	$(PYTHON) -m ruff format .github/src .github/tests .github/scripts
 
 format-check:
-	$(PYTHON) -m ruff format --check src tests scripts
+	$(PYTHON) -m ruff format --check .github/src .github/tests .github/scripts
 
 test-ci-contract:
-	$(PYTHON) scripts/validate_testing_ci_contract.py
+	$(PYTHON) .github/scripts/validate_testing_ci_contract.py
 
 security:
-	bash scripts/security-scan.sh
+	bash .github/scripts/security-scan.sh
 
 supply-chain:
-	bash scripts/supply-chain-audit.sh
+	bash .github/scripts/supply-chain-audit.sh
 
 agent-smoke:
-	bash scripts/agent-smoke.sh
+	bash .github/scripts/agent-smoke.sh
 
 ops-audit:
-	$(PYTHON) scripts/ops-audit.py --json
+	$(PYTHON) .github/scripts/ops-audit.py --json
 
 paper-status:
-	bash scripts/start-auto-paper.sh status --json
+	bash .github/scripts/start-auto-paper.sh status --json
 
 paper-health:
-	bash scripts/start-auto-paper.sh health --json
+	bash .github/scripts/start-auto-paper.sh health --json
 
 paper-ops:
-	bash scripts/start-auto-paper.sh ops-check --json
+	bash .github/scripts/start-auto-paper.sh ops-check --json
 
 paper-start:
-	bash scripts/start-auto-paper.sh start --json
+	bash .github/scripts/start-auto-paper.sh start --json
 
 paper-stop:
-	bash scripts/start-auto-paper.sh stop --json
+	bash .github/scripts/start-auto-paper.sh stop --json
 
 monitor:
-	python scripts/serve-auto-paper-monitor.py
+	python .github/scripts/serve-auto-paper-monitor.py
 
 verify:
-	bash scripts/verify.sh
+	bash .github/scripts/verify.sh

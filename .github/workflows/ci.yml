@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Skill strict
-        run: bash scripts/validate-skill.sh --strict
+        run: bash .github/scripts/validate-skill.sh --strict
       - name: Secret scan
         shell: bash
         run: |
@@ -47,28 +47,28 @@ jobs:
           else
             log_opts="HEAD~1..HEAD"
           fi
-          bash scripts/security-scan.sh --history "$log_opts"
+          bash .github/scripts/security-scan.sh --history "$log_opts"
       - name: Install
         run: python -m pip install -c constraints.txt -e ".[dev]"
       - name: Guard public boundary
-        run: bash scripts/guard_public_local_files.sh
+        run: bash .github/scripts/guard_public_local_files.sh
       - name: Dependency policy
-        run: python scripts/validate_dependency_policy.py
+        run: python .github/scripts/validate_dependency_policy.py
       - name: Testing/CI contract
-        run: python scripts/validate_testing_ci_contract.py
+        run: python .github/scripts/validate_testing_ci_contract.py
       - name: Lint
-        run: ruff check src tests
+        run: ruff check .github/src .github/tests
       - name: Format
-        run: ruff format --check src tests scripts
+        run: ruff format --check .github/src .github/tests .github/scripts
       - name: Test
-        run: PYTHONPATH=src pytest -q
+        run: PYTHONPATH=.github/src pytest -q
       - name: Data contracts
         run: |
-          PYTHONPATH=src python scripts/validate_data_contract.py --remote --timeout 10
-          PYTHONPATH=src python scripts/validate_dataset_consumption_contract.py
-          PYTHONPATH=src python scripts/validate_agent_market_context_resources.py
+          PYTHONPATH=.github/src python .github/scripts/validate_data_contract.py --remote --timeout 10
+          PYTHONPATH=.github/src python .github/scripts/validate_dataset_consumption_contract.py
+          PYTHONPATH=.github/src python .github/scripts/validate_agent_market_context_resources.py
       - name: Supply-chain audit
-        run: bash scripts/supply-chain-audit.sh
+        run: bash .github/scripts/supply-chain-audit.sh
       - name: Dependency evidence
         run: |
           python -m pip freeze --all >"${RUNNER_TEMP}/tradecat-dependency-freeze.txt"
@@ -82,20 +82,20 @@ jobs:
             ${{ runner.temp }}/tradecat-constraints.txt
       - name: Shell syntax
         run: |
-          bash -n scripts/validate-skill.sh scripts/verify.sh scripts/run-tradecat.sh scripts/agent-smoke.sh
-          bash -n scripts/security-scan.sh scripts/bootstrap-dev.sh scripts/supply-chain-audit.sh scripts/install-security-tools.sh
-          bash -n scripts/clean-local-runtime.sh scripts/start-auto-paper.sh scripts/monitor-auto-paper.sh scripts/verify-project.sh scripts/guard_public_local_files.sh
+          bash -n .github/scripts/validate-skill.sh .github/scripts/verify.sh .github/scripts/run-tradecat.sh .github/scripts/agent-smoke.sh
+          bash -n .github/scripts/security-scan.sh .github/scripts/bootstrap-dev.sh .github/scripts/supply-chain-audit.sh .github/scripts/install-security-tools.sh
+          bash -n .github/scripts/clean-local-runtime.sh .github/scripts/start-auto-paper.sh .github/scripts/monitor-auto-paper.sh .github/scripts/verify-project.sh .github/scripts/guard_public_local_files.sh
       - name: Python script syntax
         run: |
           python -m py_compile \
-            scripts/request.py \
-            scripts/ops-audit.py \
-            scripts/serve-auto-paper-monitor.py \
-            scripts/validate_dependency_policy.py \
-            scripts/validate_testing_ci_contract.py \
-            scripts/validate_data_contract.py \
-            scripts/validate_dataset_consumption_contract.py \
-            scripts/validate_agent_market_context_resources.py
+            .github/scripts/request.py \
+            .github/scripts/ops-audit.py \
+            .github/scripts/serve-auto-paper-monitor.py \
+            .github/scripts/validate_dependency_policy.py \
+            .github/scripts/validate_testing_ci_contract.py \
+            .github/scripts/validate_data_contract.py \
+            .github/scripts/validate_dataset_consumption_contract.py \
+            .github/scripts/validate_agent_market_context_resources.py
       - name: Wheel package data
         shell: bash
         run: |
@@ -140,12 +140,13 @@ jobs:
       - name: Install package
         run: python -m pip install -c constraints.txt -e ".[dev]"
       - name: Agent readiness smoke
-        run: bash scripts/agent-smoke.sh
+        run: bash .github/scripts/agent-smoke.sh
       - name: Upload agent smoke evidence
         uses: actions/upload-artifact@v7
         if: always()
         with:
           name: agent-readiness-${{ github.run_id }}
+          include-hidden-files: true
           path: |
-            skills/tradecat-public/agents/manifest.json
-            skills/tradecat-public/references/agent-contract.md
+            .github/skills/tradecat-public/agents/manifest.json
+            .github/skills/tradecat-public/references/agent-contract.md

@@ -4,23 +4,76 @@ title = "TradeCat public secret scanning"
 useDefault = true
 
 [[allowlists]]
-description = "Vendored Binance reference docs contain literal placeholder API-key header examples, not real credentials. Keep this scoped to the self-contained Agent market-context snapshot."
+# Rule targeting avoids global directory traversal exclusions in Gitleaks.
+targetRules = ["generic-api-key", "curl-auth-header"]
+description = "Only the literal public placeholder header on the named vendor-doc paths is exempt; other secrets in the same files must still be scanned."
+condition = "AND"
+# Empty target means the extracted secret, not the whole curl command/line.
+regexTarget = ""
 paths = [
-  '''resources/agent_market_context/binance/api-docs/.*''',
-  '''resources/agent_market_context/binance/upstream/binance-skills-hub-main/skills/binance/.*/references/authentication\.md''',
+  '''(?:^|/)(?:\.github/|scripts/project/|project/)?resources/agent_market_context/binance/api-docs/币安API完整文档汇总\.md$''',
+  '''(?:^|/)(?:\.github/|scripts/project/|project/)?resources/agent_market_context/binance/upstream/binance-skills-hub-main/skills/binance/(?:assets|convert|derivatives-trading-coin-futures|derivatives-trading-portfolio-margin|derivatives-trading-portfolio-margin-pro|simple-earn|vip-loan|spot|derivatives-trading-usds-futures|margin-trading|alpha|algo|fiat|sub-account)/references/authentication\.md$''',
 ]
 regexes = [
-  '''X-MBX-APIKEY:\s*your_api_key''',
+  '''^your_api_key$''',
 ]
 
 [[allowlists]]
-description = "Auto-tasks step identifiers are workflow IDs, not credentials. Keep this scoped to task documents and pN-prefixed task refs."
+targetRules = ["generic-api-key"]
+description = "Only literal pN-prefixed workflow identifiers in task documents are exempt, never the task directory itself."
+condition = "AND"
+regexTarget = "line"
 paths = [
   '''tasks/.*''',
 ]
 regexes = [
-  '''"key":\s*"p[0-9][a-z0-9_]*"''',
-  '''"step_key":\s*"p[0-9][a-z0-9_]*"''',
-  '''Step Key:\s*`p[0-9][a-z0-9_]*`''',
-  '''依赖步骤 Key:\s*p[0-9][a-z0-9_]*''',
+  '''^\s*"key":\s*"p[0-9][a-z0-9_]*"\s*,?\s*$''',
+  '''^\s*"step_key":\s*"p[0-9][a-z0-9_]*"\s*,?\s*$''',
+  '''^\s*Step Key:\s*`p[0-9][a-z0-9_]*`\s*$''',
+  '''^\s*依赖步骤 Key:\s*p[0-9][a-z0-9_]*\s*$''',
+]
+
+[[allowlists]]
+targetRules = ["generic-api-key"]
+description = "Finite historical workflow Step Key declarations, including Markdown encoded in JSON task records. Exact metadata values only; no prefix, whole-line or directory waiver."
+condition = "AND"
+regexTarget = ""
+paths = ['''(?:^|/)tasks/''']
+regexes = [
+  '''^p0_01_preflight$''',
+  '''^p0_02_track_thesis_helper$''',
+  '''^p0_03_validate_safety$''',
+  '''^p0_04_checkpoint_ready$''',
+  '''^p0_stabilize_baseline$''',
+  '''^p1_01_schema$''',
+  '''^p1_02_fixtures$''',
+  '''^p1_03_validator$''',
+  '''^p1_04_docs_manifest$''',
+  '''^p1_research_loop_contract$''',
+  '''^p2_01_loop_cli$''',
+  '''^p2_02_tool_plan$''',
+  '''^p2_03_outputs$''',
+  '''^p2_04_audit_smoke$''',
+  '''^p2_observe_only_loop$''',
+  '''^p3_01_audit_gate$''',
+  '''^p3_02_thesis_execution$''',
+  '''^p3_03_journal_health$''',
+  '''^p3_04_service_mode$''',
+  '''^p3_paper_execution_loop$''',
+  '''^p4_01_account_state$''',
+  '''^p4_02_position_thesis_schema$''',
+  '''^p4_03_apply_position_actions$''',
+  '''^p4_position_management$''',
+  '''^p5_01_trace$''',
+  '''^p5_02_quality_report$''',
+  '''^p5_03_replay_determinism$''',
+  '''^p5_replay_review$''',
+  '''^p6_01_risk_policy_schema$''',
+  '''^p6_02_risk_engine$''',
+  '''^p6_03_kill_switch$''',
+  '''^p6_portfolio_risk$''',
+  '''^p7_01_boundary_doc$''',
+  '''^p7_02_intent_handshake$''',
+  '''^p7_03_public_guardrails$''',
+  '''^p7_private_executor_design$''',
 ]

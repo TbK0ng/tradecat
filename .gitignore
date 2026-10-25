@@ -1,4 +1,4 @@
-.venv/
+.github/.venv/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
@@ -10,9 +10,9 @@ build/
 .coverage
 htmlcov/
 .tradecat/
-.runtime/
-.hermes/
-.tools/
+.github/.runtime/
+.github/.hermes/
+.github/.tools/
 project/
 tasks/
 

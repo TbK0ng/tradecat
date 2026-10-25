@@ -4,15 +4,17 @@
 
 ## Mission & Scope
 
-TradeCat Public 的使命是：Agent 交易员同步公开在线表格作为信号源，自主补齐 Binance public/read-only market context，生成 thesis，再由 TradeCat 执行 schema 审计、paper/watch、账本、风控拒绝、报告和可复现审计。
+TradeCat Public 的使命是：成为可被 Hermes、Codex、Claude Code、OpenClaw 等 Agent 框架驱动的自主交易 loop。Agent 先通过公开在线表格信号感知市场异动，后续可扩展其他信号源；再通过 tools、skills、Binance API 文档和 public/read-only 行情数据自主补齐 market context，生成 USDT 本位合约交易 thesis；TradeCat 执行 schema 审计、paper/watch、账本、风控拒绝、订单/仓位管理报告、结果归因和可复现审计，并让历史执行数据反哺后续策略复盘与迭代。
+
+当前公开仓库只承载 public-readonly + paper/watch 层；任何真实下单、账户读取、签名请求或实盘 executor 必须留在未来独立私有边界内。
 
 仓库身份以 `tradecat-public` 为准；GitHub remote 为 `tukuaiai/tradecat-public`。Agent 不得把它当成旧私有 TradeCat 运行态或实盘 executor。
 
 允许做：
 
-- 修改 `src/tradecat_sources/` 的公开在线表格信号源适配。
-- 修改 `src/tradecat_auto/` 的 Agent context 审计、paper/watch、ledger、风控、报告和本地运行态逻辑。
-- 修改 `contracts/`、`resources/`、`tests/`、`scripts/`、`docs/`、`skills/tradecat-public/` 中与任务直接相关的契约、资源、测试、脚本和文档。
+- 修改 `.github/src/tradecat_sources/` 的公开在线表格信号源适配。
+- 修改 `.github/src/tradecat_auto/` 的 Agent context 审计、paper/watch、ledger、风控、报告和本地运行态逻辑。
+- 修改 `.github/contracts/`、`.github/resources/`、`.github/tests/`、`.github/scripts/`、`.github/docs/`、`.github/skills/tradecat-public/` 中与任务直接相关的契约、资源、测试、脚本和文档。
 - 运行 public-readonly 命令、本地 paper/watch 命令和验证门禁。
 
 禁止做：
@@ -27,8 +29,8 @@ TradeCat Public 的使命是：Agent 交易员同步公开在线表格作为信�
 
 敏感或本地路径：
 
-- `.runtime/`、`.tradecat/`、`.venv/`、`.hermes/`、`.tools/`、`project/`、`tasks/` 只属于本机运行态或开发态，必须保持 ignored。
-- `skills/tradecat-public/agents/manifest.json` 是 Agent/Hermes 机器主契约。
+- `.github/.runtime/`、`.tradecat/`、`.github/.venv/`、`.github/.hermes/`、`.github/.tools/`、`project/`、`tasks/` 只属于本机运行态或开发态，必须保持 ignored。
+- `.github/skills/tradecat-public/agents/manifest.json` 是 Agent/Hermes 机器主契约。
 - TODO: GitHub 平台分支保护配置无法从仓库文件确认；需要仓库管理员核查 GitHub Settings。
 
 ## Golden Path
@@ -36,7 +38,7 @@ TradeCat Public 的使命是：Agent 交易员同步公开在线表格作为信�
 标准执行路径：
 
 1. `git status --short --branch`
-2. 阅读任务相关文件、`README.md`、本文件、`skills/tradecat-public/agents/manifest.json` 和相关 `contracts/`。
+2. 阅读任务相关文件、`README.md`、本文件、`.github/skills/tradecat-public/agents/manifest.json` 和相关 `.github/contracts/`。
 3. 安装或确认开发依赖：`python3 -m pip install -c constraints.txt -e ".[dev]"`
 4. 先跑针对性测试或只读命令复现问题。
 5. 做最小必要修改；不做顺手重构。
@@ -55,77 +57,86 @@ python3 -m pip install -c constraints.txt -e ".[dev]"
 只读入口：
 
 ```bash
-python3 scripts/request.py --datasets --format json
-python3 scripts/request.py signal_flow --format json --limit 5
-python3 scripts/request.py anomaly_panel --format json --limit 0
-bash scripts/binance-public-snapshot.sh --symbols BTCUSDT,ETHUSDT --json
-bash scripts/binance-public-bundle.sh --symbols BTCUSDT,ETHUSDT --json
-bash scripts/run-tradecat.sh agent-market-context --symbol BTCUSDT --json
-bash scripts/run-tradecat.sh soft-layer --json
-bash scripts/start-auto-paper.sh status --json
-bash scripts/run-tradecat.sh latest-cycle --json
-bash scripts/run-tradecat.sh latest-decision --json
-bash scripts/run-tradecat.sh strategy-review --ledger-path .runtime/auto-paper/paper_ledger.json --archive-path .runtime/auto-paper/cycles.jsonl --json
+python3 .github/scripts/request.py --datasets --format json
+python3 .github/scripts/request.py signal_flow --format json --limit 5
+python3 .github/scripts/request.py anomaly_panel --format json --limit 0
+bash .github/scripts/binance-public-snapshot.sh --symbols BTCUSDT,ETHUSDT --json
+bash .github/scripts/binance-public-bundle.sh --symbols BTCUSDT,ETHUSDT --json
+bash .github/scripts/run-tradecat.sh agent-market-context --symbol BTCUSDT --json
+bash .github/scripts/run-tradecat.sh soft-layer --json
+bash .github/scripts/start-auto-paper.sh status --json
+bash .github/scripts/run-tradecat.sh latest-cycle --json
+bash .github/scripts/run-tradecat.sh latest-decision --json
+bash .github/scripts/run-tradecat.sh strategy-review --ledger-path .github/.runtime/auto-paper/paper_ledger.json --archive-path .github/.runtime/auto-paper/cycles.jsonl --json
 ```
 
 测试、lint、format：
 
 ```bash
-PYTHONPATH=src python3 -m pytest -q
-PYTHONPATH=src ruff check src tests
-PYTHONPATH=src ruff format --check src tests scripts
+PYTHONPATH=.github/src python3 -m pytest -q
+PYTHONPATH=.github/src ruff check .github/src .github/tests
+PYTHONPATH=.github/src ruff format --check .github/src .github/tests .github/scripts
 ```
 
 完整交付门禁：
 
 ```bash
-bash scripts/agent-smoke.sh
-bash scripts/verify.sh
-bash scripts/validate-skill.sh --strict
-bash scripts/security-scan.sh
-bash scripts/supply-chain-audit.sh
-python3 scripts/validate_dependency_policy.py
-python3 scripts/validate_testing_ci_contract.py
+bash .github/scripts/agent-smoke.sh
+bash .github/scripts/verify.sh
+bash .github/scripts/validate-skill.sh --strict
+bash .github/scripts/security-scan.sh
+bash .github/scripts/supply-chain-audit.sh
+python3 .github/scripts/validate_dependency_policy.py
+python3 .github/scripts/validate_testing_ci_contract.py
 git diff --check
 ```
 
 本地 paper/watch：
 
 ```bash
-bash scripts/start-auto-paper.sh ops-check --json
-python3 scripts/ops-audit.py --json
-bash scripts/start-auto-paper.sh start --json
-bash scripts/start-auto-paper.sh status --json
-bash scripts/start-auto-paper.sh stop --json
-bash scripts/start-auto-paper.sh systemd-install --json
+bash .github/scripts/start-auto-paper.sh ops-check --json
+python3 .github/scripts/ops-audit.py --json
+bash .github/scripts/start-auto-paper.sh start --json
+bash .github/scripts/start-auto-paper.sh status --json
+bash .github/scripts/start-auto-paper.sh stop --json
+bash .github/scripts/start-auto-paper.sh systemd-install --json
 ```
 
 本地 Web 监控：
 
 ```bash
-python3 scripts/serve-auto-paper-monitor.py --host 127.0.0.1 --port 8765
+python3 .github/scripts/serve-auto-paper-monitor.py --host 127.0.0.1 --port 8765
+```
+
+干净 Hermes 容器：
+
+```bash
+bash .github/scripts/tradecat-hermes-container.sh config
+bash .github/scripts/tradecat-hermes-container.sh build
+bash .github/scripts/tradecat-hermes-container.sh up
+bash .github/scripts/tradecat-hermes-container.sh verify
 ```
 
 ## Code Change Rules
 
-- 根目录是唯一 Python 项目根；不要创建 `scripts/project/` 或恢复 `project/`。
-- `skills/tradecat-public/` 是唯一 Skill 包根；不得在仓库根创建 `SKILL.md`、`agents/` 或 `references/`。
-- `scripts/request.py` 是公开在线表格读取入口；`src/tradecat_sources/` 只做信号源适配。
-- `src/tradecat_auto/` 只执行 public-readonly + paper/watch。
-- `contracts/` 中 schema 变化必须同步测试和 manifest/docs。
-- 新依赖必须先通过 `scripts/validate_dependency_policy.py`；更新 allowlist 时写明用途。
-- 任何功能、命令、配置、目录或工作流变化必须同步 README、AGENTS、相关 `docs/`、Skill references 和 manifest。
+- 根目录是唯一 Python 项目根；根目录文件保持原位，目录只保留 `.git/`、`.github/`。源码、测试、工具与运行目录统一在 `.github/`，不创建旧路径兼容链接，不恢复 `scripts/project/` 或 `project/`。
+- `.github/skills/tradecat-public/` 是唯一 Skill 包根；不得在仓库根创建 `SKILL.md`、`agents/` 或 `references/`。
+- `.github/scripts/request.py` 是公开在线表格读取入口；`.github/src/tradecat_sources/` 只做信号源适配。
+- `.github/src/tradecat_auto/` 只执行 public-readonly + paper/watch。
+- `.github/contracts/` 中 schema 变化必须同步测试和 manifest/docs。
+- 新依赖必须先通过 `.github/scripts/validate_dependency_policy.py`；更新 allowlist 时写明用途。
+- 任何功能、命令、配置、目录或工作流变化必须同步 README、AGENTS、相关 `.github/docs/`、Skill references 和 manifest。
 - 不做无任务要求的大范围重构、格式化或搬目录；若为了新增格式门禁必须机械格式化，需明确说明。
 
 ## Style & Quality
 
 - Python 版本要求来自 `pyproject.toml`：`>=3.12`。
 - Ruff 配置在 `pyproject.toml`：`target-version=py312`，`line-length=120`，lint 选择 `E/W/F/I/B/C4/UP`。
-- CI 执行 `ruff check src tests` 和 `ruff format --check src tests scripts`。
-- pytest 配置在 `pyproject.toml`：测试目录为 `tests`，文件名 `test_*.py`，函数名 `test_*`。
+- CI 执行 `ruff check .github/src .github/tests` 和 `ruff format --check .github/src .github/tests .github/scripts`。
+- pytest 配置在 `pyproject.toml`：测试目录为 `.github/tests`，文件名 `test_*.py`，函数名 `test_*`。
 - 人类可见文档、注释、日志优先中文；机器结构、变量、函数、类名使用清晰英文。
 - 输出 JSON contract 时保留 `schema_version`、`error_code`、`provenance`、`safety`；安全字段 `real_orders`、`signed_requests`、`reads_api_keys` 必须保持 false。
-- 在线表格 source adapter 输出统一由 `contracts/tradecat-auto-source-payload.schema.json` 覆盖；新增 `sheet_events`、`signal_flow_events`、`anomaly_symbols`、`signal_events`、`anomaly_signal_events` 或 `source_error` 行为时必须同步 schema、manifest 和 payload validation。
+- 在线表格 source adapter 输出统一由 `.github/contracts/tradecat-auto-source-payload.schema.json` 覆盖；新增 `sheet_events`、`signal_flow_events`、`anomaly_symbols`、`signal_events`、`anomaly_signal_events` 或 `source_error` 行为时必须同步 schema、manifest 和 payload validation。
 
 ## Project Map
 
@@ -140,22 +151,27 @@ tradecat-public/
 |-- constraints.txt            # 依赖约束
 |-- Makefile                   # 常用本地命令
 |-- .env.example               # public-readonly 与本地 runtime 配置示例
-|-- .github/
-|   |-- CODEOWNERS
-|   |-- dependabot.yml
-|   |-- pull_request_template.md
-|   `-- workflows/ci.yml
-|-- contracts/                 # JSON Schema 机器契约
-|-- docs/                      # 架构、配置、部署、发布说明
-|-- resources/                 # Binance 快照、Agent soft layer 等公开资源
-|   `-- test_ci_matrix.json    # 测试分层与 CI/CD 机器契约
-|-- scripts/                   # request、paper runtime、监控、验证脚本
-|-- src/
-|   |-- tradecat_sources/      # 公开在线表格信号源与 dataset contract
-|   `-- tradecat_auto/         # Agent context 审计、paper/watch、ledger、风控、报告
-|-- tests/                     # pytest 测试
-`-- skills/
-    `-- tradecat-public/
+|-- compose.tradecat-hermes.yml # WSL2 内干净 Hermes/TradeCat Ubuntu 容器
+`-- .github/                  # 所有目录统一归属
+    |-- AGENTS.md
+    |-- CODEOWNERS
+    |-- dependabot.yml
+    |-- pull_request_template.md
+    |-- workflows/ci.yml
+    |-- contracts/            # JSON Schema 机器契约
+    |-- docs/                 # 架构、配置、部署、发布说明
+    |-- docker/               # 本地隔离运行环境
+    |-- resources/            # 公开只读参考资源、test_ci_matrix.json
+    |-- scripts/              # request、paper runtime、监控、验证脚本
+    |-- src/
+    |   |-- tradecat_sources/ # 公开在线表格信号源与 dataset contract
+    |   `-- tradecat_auto/    # Agent context、paper/watch、ledger、风控、报告
+    |-- tests/                # pytest 测试
+    |-- .venv/                # ignored，本机开发环境
+    |-- .runtime/             # ignored，本机状态和账本
+    |-- .hermes/              # ignored，本机计划
+    |-- .tools/               # ignored，本机工具
+    `-- skills/tradecat-public/
         |-- SKILL.md
         |-- agents/manifest.json
         |-- agents/hermes.yaml
@@ -168,31 +184,31 @@ tradecat-public/
 
 ```text
 公开在线表格 CSV
--> scripts/request.py / tradecat_sources.registry
+-> .github/scripts/request.py / tradecat_sources.registry
 -> Agent/Hermes 生成 agent_market_context + agent_trade_thesis
 -> context-audit / run-context
 -> deterministic risk gate
 -> paper_broker / paper_ledger
--> .runtime/auto-paper JSONL archive + SQLite audit journal
+-> .github/.runtime/auto-paper JSONL archive + SQLite audit journal
 -> latest-cycle/latest-decision + health/daily/alert/replay 报告
 ```
 
 ## Common Pitfalls
 
-- `ModuleNotFoundError: tradecat_auto`：先安装开发依赖，或运行命令时设置 `PYTHONPATH=src`。
-- `pytest` / `ruff` 不存在：运行 `bash scripts/bootstrap-dev.sh` 或安装 `python3 -m pip install -c constraints.txt -e ".[dev]"`。
-- 在线表格请求失败：先跑 `python3 scripts/request.py --datasets --format json`；网络受限时设置 `HTTP_PROXY` / `HTTPS_PROXY`。
-- `paper_service_not_running`：运行 `bash scripts/start-auto-paper.sh status --json`；需要常驻时运行 `bash scripts/start-auto-paper.sh start --json`。
+- `ModuleNotFoundError: tradecat_auto`：先安装开发依赖，或运行命令时设置 `PYTHONPATH=.github/src`。
+- `pytest` / `ruff` 不存在：运行 `bash .github/scripts/bootstrap-dev.sh` 或安装 `python3 -m pip install -c constraints.txt -e ".[dev]"`。
+- 在线表格请求失败：先跑 `python3 .github/scripts/request.py --datasets --format json`；网络受限时设置 `HTTP_PROXY` / `HTTPS_PROXY`。
+- `paper_service_not_running`：运行 `bash .github/scripts/start-auto-paper.sh status --json`；需要常驻时运行 `bash .github/scripts/start-auto-paper.sh start --json`。
 - 默认不要长期常驻运行；启动 loop 前必须确认网络/API/token 成本、代理和运行目的。
-- 运维 runbook 在 `docs/operations-runbook.md`；任何启动、停止、禁用、恢复、残留清理或账本检查流程变化必须同步更新。
-- 长期常驻 owner 冲突：先运行 `python3 scripts/ops-audit.py --json`；确需常驻时，才使用 `bash scripts/start-auto-paper.sh systemd-install --json` 让 user systemd service 托管唯一 `_run`；不要让旧 timer `_cycle` 和手动 `_run` 同时写同一套 `.runtime/auto-paper/`。
-- `heartbeat_stale` 但 pid 仍在：单轮可能卡在 public 网络或盯市；默认 `TRADECAT_AUTO_PAPER_CYCLE_TIMEOUT_SECONDS=6000`，可运行 `bash scripts/start-auto-paper.sh heal --json`。
-- `paper-report` 和常驻交易不一致：默认事实源是 `.runtime/auto-paper/paper_ledger.json` 与 `.runtime/auto-paper/cycles.jsonl`；先跑 `bash scripts/run-tradecat.sh latest-decision --json`。
-- `strategy_symbol_blocked` / `strategy_signal_type_blocked` / `strategy_side_blocked`：`strategy-review` 根据本地 paper 亏损结果生成了 `.runtime/auto-paper/strategy_state.json`，这是 paper/watch 自我迭代过滤；先看 `bash scripts/run-tradecat.sh strategy-review --ledger-path .runtime/auto-paper/paper_ledger.json --archive-path .runtime/auto-paper/cycles.jsonl --json`。
+- 运维 runbook 在 `.github/docs/operations-runbook.md`；任何启动、停止、禁用、恢复、残留清理或账本检查流程变化必须同步更新。
+- 长期常驻 owner 冲突：先运行 `python3 .github/scripts/ops-audit.py --json`；确需常驻时，才使用 `bash .github/scripts/start-auto-paper.sh systemd-install --json` 让 user systemd service 托管唯一 `_run`；不要让旧 timer `_cycle` 和手动 `_run` 同时写同一套 `.github/.runtime/auto-paper/`。
+- `heartbeat_stale` 但 pid 仍在：单轮可能卡在 public 网络或盯市；默认 `TRADECAT_AUTO_PAPER_CYCLE_TIMEOUT_SECONDS=6000`，可运行 `bash .github/scripts/start-auto-paper.sh heal --json`。
+- `paper-report` 和常驻交易不一致：默认事实源是 `.github/.runtime/auto-paper/paper_ledger.json` 与 `.github/.runtime/auto-paper/cycles.jsonl`；先跑 `bash .github/scripts/run-tradecat.sh latest-decision --json`。
+- `strategy_symbol_blocked` / `strategy_signal_type_blocked` / `strategy_side_blocked`：`strategy-review` 根据本地 paper 亏损结果生成了 `.github/.runtime/auto-paper/strategy_state.json`，这是 paper/watch 自我迭代过滤；先看 `bash .github/scripts/run-tradecat.sh strategy-review --ledger-path .github/.runtime/auto-paper/paper_ledger.json --archive-path .github/.runtime/auto-paper/cycles.jsonl --json`。
 - `agent_sizing_required` 在重启后出现：这是默认 fail-closed 手动模式；需要 Agent/Hermes 显式写入 thesis，或显式设置 `TRADECAT_AUTO_PAPER_AUTONOMY_ENABLED=1` / `TRADECAT_AUTO_PAPER_AUTONOMY_PROFILE_PATH`。
 - CI 成功只证明代码、契约和门禁通过，不代表本机 auto-paper loop 正在运行。
 - `agent_sizing_required`：这是安全拒绝；Agent thesis 或显式 ignored runtime paper autonomy profile 必须提供 sizing/leverage/exits。用户需要额外约束时再显式传入 portfolio risk policy 或 kill switch。
-- 监控端口 `8765` 冲突：换空闲端口运行 `python3 scripts/serve-auto-paper-monitor.py --host 127.0.0.1 --port <free-port>`。
+- 监控端口 `8765` 冲突：换空闲端口运行 `python3 .github/scripts/serve-auto-paper-monitor.py --host 127.0.0.1 --port <free-port>`。
 
 ## PR / Commit Rules
 
@@ -212,10 +228,10 @@ tradecat-public/
 - `AGENTS.md`
 - `CONTRIBUTING.md`
 - `CHANGELOG.md`
-- 相关 `docs/`
-- `skills/tradecat-public/SKILL.md`
-- `skills/tradecat-public/agents/manifest.json`
-- 相关 `skills/tradecat-public/references/`
+- 相关 `.github/docs/`
+- `.github/skills/tradecat-public/SKILL.md`
+- `.github/skills/tradecat-public/agents/manifest.json`
+- 相关 `.github/skills/tradecat-public/references/`
 - 对应测试或 guard
 
 不确定则写 `TODO:` 并指出需要哪个文件、路径、字段或命令输出才能确认；严禁编造。

@@ -1,0 +1,97 @@
+---
+name: tradecat-public
+description: "TradeCat public Hermes skill: Agent/Hermes paper-trading runtime using public online sheet signals, bundled Binance public-readonly resources, schema-audited context, and local paper/watch execution."
+---
+
+# tradecat-public Skill
+
+Use this skill when Hermes/Agent needs to operate TradeCat from the embedded Skill package at `.github/skills/tradecat-public/`. TradeCat Public is the public-readonly + paper/watch layer for an autonomous USDT futures trading loop: online sheet signals drive market awareness, Agents use tools/skills/Binance API docs/public market data to build context and thesis, and TradeCat audits schemas, runs paper decisions, manages local paper ledger/positions, reports outcomes, and preserves evidence for iterative strategy review. The Python project root is the repository root two levels above this Skill directory; the Skill package provides activation rules, Agent role profiles, references, and the canonical manifest.
+
+## When to Use This Skill
+
+- The task mentions TradeCat public sheet signals, `signal_flow`, `anomaly_panel`, Agent trading loops, paper/watch, paper ledger, replay/backtest, health/daily/alert reports, or autonomous paper ops.
+- The task mentions Binance public/read-only Agent market context, K lines, order book, funding, open interest, long/short ratio, context audit, or trade thesis.
+- The task needs the Agent machine contract, role profile, safety boundary, Hermes/OpenAI adapter config, or Skill/package governance.
+
+## Not For / Boundaries
+
+- Do not read Binance keys, secrets, listen keys, account state, balances, positions, or orders.
+- Do not sign requests, call private account/order/leverage/margin endpoints, or place real orders.
+- Do not invent sizing, leverage, stop loss, take profit, or time-stop defaults; Agent thesis must explicitly provide them.
+- Do not restore the retired local TUI, installer, watchdog, or cache-browser product line.
+- Do not write runtime, cache, logs, ledgers, audit journals, `.env`, `.github/.venv`, `.tradecat`, `.github/.runtime`, `.github/.hermes`, or `.github/.tools` into git.
+- TradeCat may write local paper/watch state only under ignored `.github/.runtime/`.
+
+## Quick Reference
+
+From the repository root:
+
+```bash
+python3 -m json.tool .github/skills/tradecat-public/agents/manifest.json >/dev/null
+python3 .github/scripts/request.py --datasets --format json
+python3 .github/scripts/request.py signal_flow --format json --limit 5
+python3 .github/scripts/request.py anomaly_panel --format json --limit 0
+bash scripts/run-tradecat.sh soft-layer --json
+bash scripts/run-tradecat.sh paper-report --json
+bash .github/scripts/start-auto-paper.sh status --json
+```
+
+From this Skill directory, use the local wrapper:
+
+```bash
+bash scripts/run-tradecat.sh soft-layer --json
+```
+
+Agent-supplied market context:
+
+```bash
+bash .github/scripts/binance-public-bundle.sh --symbols BTCUSDT,ETHUSDT --json
+bash scripts/run-tradecat.sh agent-market-context --symbol BTCUSDT --json
+bash scripts/run-tradecat.sh context-audit --input /path/to/agent-market-context.json --json
+bash scripts/run-tradecat.sh run-context --input /path/to/agent-market-context.json --mode paper --json
+bash scripts/run-tradecat.sh replay-report --archive-path .github/.runtime/auto-paper/cycles.jsonl --ledger-path .github/.runtime/auto-paper/paper_ledger.json --json
+bash scripts/run-tradecat.sh strategy-review --ledger-path .github/.runtime/auto-paper/paper_ledger.json --archive-path .github/.runtime/auto-paper/cycles.jsonl --json
+```
+
+Validation:
+
+```bash
+bash .github/scripts/agent-smoke.sh
+bash .github/scripts/verify.sh
+bash scripts/validate-skill.sh --strict
+bash .github/scripts/security-scan.sh
+bash .github/scripts/supply-chain-audit.sh
+```
+
+## Examples
+
+### Example 1: Inspect Public Signals
+
+Run `python3 .github/scripts/request.py signal_flow --format json --limit 5`, then inspect `anomaly_panel` with `python3 .github/scripts/request.py anomaly_panel --format json --limit 0`.
+
+### Example 2: Audit Agent Market Context
+
+Run `bash scripts/run-tradecat.sh context-audit --input context.json --json`. Only if the audit passes and the Agent supplied explicit paper sizing/exits should paper/watch execution continue.
+
+### Example 3: Operate Paper Runtime
+
+Run `bash .github/scripts/start-auto-paper.sh ops-check --json`, then `bash .github/scripts/start-auto-paper.sh status --json`. For long-lived operation, use `bash .github/scripts/start-auto-paper.sh systemd-install --json` so the user systemd service is the only paper loop owner. Use `python3 .github/scripts/serve-auto-paper-monitor.py --host 127.0.0.1 --port 8765` only for local runtime observation.
+
+### Example 4: Change Project Code
+
+Edit root `.github/src/`, `.github/tests/`, `.github/contracts/`, `.github/resources/`, or `scripts/`; keep Skill activation files under `.github/skills/tradecat-public/`. Update `AGENTS.md` and manifest paths when architecture changes.
+
+## References
+
+- `agents/manifest.json`: canonical machine contract, stored inside this Skill package.
+- `references/index.md`: reference navigation.
+- `references/skill-package-governance.md`: embedded Skill package governance.
+- `references/hermes-agent-guide.md`: Hermes/Agent operating guide.
+- `references/agent-contract.md`: Agent command and JSON contract.
+- `references/private-executor-boundary.md`: public/private real-execution boundary.
+
+## Maintenance
+
+- Manifest paths are repository-root relative unless explicitly documented otherwise.
+- The project root must remain a normal Python project; the Skill package must remain under `.github/skills/tradecat-public/`.
+- Keep all safety fields `real_orders=false`, `signed_requests=false`, and `reads_api_keys=false` for public repo entrypoints.

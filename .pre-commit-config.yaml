@@ -3,36 +3,36 @@ repos:
     hooks:
       - id: tradecat-skill-strict
         name: TradeCat skill strict validation
-        entry: bash scripts/validate-skill.sh --strict
+        entry: bash .github/scripts/validate-skill.sh --strict
         language: system
         pass_filenames: false
       - id: tradecat-root-boundary
         name: TradeCat root boundary guard
-        entry: bash scripts/guard_public_local_files.sh
+        entry: bash .github/scripts/guard_public_local_files.sh
         language: system
         pass_filenames: false
       - id: tradecat-shell-syntax
         name: TradeCat shell syntax
-        entry: bash -n scripts/validate-skill.sh scripts/verify.sh scripts/verify-project.sh scripts/run-tradecat.sh scripts/agent-smoke.sh scripts/security-scan.sh scripts/bootstrap-dev.sh scripts/supply-chain-audit.sh scripts/install-security-tools.sh scripts/clean-local-runtime.sh scripts/start-auto-paper.sh scripts/monitor-auto-paper.sh scripts/guard_public_local_files.sh skills/tradecat-public/scripts/run-tradecat.sh skills/tradecat-public/scripts/validate-skill.sh
+        entry: bash -n .github/scripts/validate-skill.sh .github/scripts/verify.sh .github/scripts/verify-project.sh .github/scripts/run-tradecat.sh .github/scripts/agent-smoke.sh .github/scripts/security-scan.sh .github/scripts/bootstrap-dev.sh .github/scripts/supply-chain-audit.sh .github/scripts/install-security-tools.sh .github/scripts/clean-local-runtime.sh .github/scripts/start-auto-paper.sh .github/scripts/monitor-auto-paper.sh .github/scripts/guard_public_local_files.sh .github/skills/tradecat-public/scripts/run-tradecat.sh .github/skills/tradecat-public/scripts/validate-skill.sh
         language: system
         pass_filenames: false
       - id: tradecat-dependency-policy
         name: TradeCat dependency policy
-        entry: python3 scripts/validate_dependency_policy.py
+        entry: python3 .github/scripts/validate_dependency_policy.py
         language: system
         pass_filenames: false
       - id: tradecat-ruff-format
         name: TradeCat Ruff format check
-        entry: ruff format --check src tests scripts
+        entry: ruff format --check .github/src .github/tests .github/scripts
         language: system
         pass_filenames: false
       - id: tradecat-agent-smoke
         name: TradeCat agent readiness smoke
-        entry: bash scripts/agent-smoke.sh
+        entry: bash .github/scripts/agent-smoke.sh
         language: system
         pass_filenames: false
       - id: tradecat-data-contract
         name: TradeCat registry contract
-        entry: bash -c 'PYTHONPATH=src python scripts/validate_data_contract.py'
+        entry: bash -c 'PYTHONPATH=.github/src python .github/scripts/validate_data_contract.py'
         language: system
         pass_filenames: false

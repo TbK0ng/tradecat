@@ -1,0 +1,1191 @@
+{
+  "schema": "tradecat.agent_manifest.v1",
+  "schema_version": "1.0.0",
+  "name": "tradecat-public",
+  "display_name": "TradeCat Agent Paper Trader",
+  "repo_role": "Public-readonly + paper/watch layer for an autonomous Agent trading loop: online sheets provide public market signals, future adapters may add more signal sources, Agents such as Hermes/Codex/Claude Code/OpenClaw use tools, skills, Binance API docs, and public market data to produce USDT futures context and thesis, and TradeCat runs schema audit, paper decisions, local paper ledger/position management, risk rejection, reports, outcome attribution, and iterative strategy review.",
+  "skill_root": ".github/skills/tradecat-public",
+  "project_root": ".",
+  "default_workdir": ".",
+  "human_docs": [
+    "README.md",
+    "AGENTS.md",
+    ".github/skills/tradecat-public/references/index.md",
+    ".github/skills/tradecat-public/references/hermes-agent-guide.md",
+    ".github/skills/tradecat-public/references/private-executor-boundary.md"
+  ],
+  "agent_docs": [
+    ".github/skills/tradecat-public/SKILL.md",
+    ".github/skills/tradecat-public/agents/manifest.json",
+    ".github/skills/tradecat-public/references/agent-contract.md",
+    ".github/skills/tradecat-public/references/hermes-agent-guide.md",
+    ".github/skills/tradecat-public/references/private-executor-boundary.md"
+  ],
+  "agent_profiles": [
+    {
+      "id": "openai",
+      "path": ".github/skills/tradecat-public/agents/openai.yaml",
+      "role": "platform adapter"
+    },
+    {
+      "id": "hermes",
+      "path": ".github/skills/tradecat-public/agents/hermes.yaml",
+      "role": "platform adapter"
+    }
+  ],
+  "skill_package_governance": {
+    "shape": "project_with_embedded_hermes_skill",
+    "canonical_machine_contract": ".github/skills/tradecat-public/agents/manifest.json",
+    "skill_root": ".github/skills/tradecat-public",
+    "implementation_project_root": ".",
+    "no_second_truth": true,
+    "root_responsibilities": [
+      "Headless Python Agent runtime at repository root",
+      "Online sheet signal-source adapter under .github/src/tradecat_sources",
+      "Agent market-context audit, paper/watch, ledger, risk, reports under .github/src/tradecat_auto",
+      "Self-contained Binance skill/API snapshots under .github/resources/agent_market_context/binance"
+    ],
+    "forbidden_root_paths": [
+      "SKILL.md",
+      "agents",
+      "references",
+      "src/tradecat_terminal",
+      ".github/src/tradecat_terminal",
+      "install.sh",
+      "install.ps1",
+      "uninstall.sh",
+      "uninstall.ps1",
+      "scripts/start.sh",
+      "scripts/watchdog.sh"
+    ],
+    "local_runtime_paths": [
+      ".github/.runtime/**",
+      ".github/.hermes/**",
+      ".tradecat/**",
+      ".github/.venv/**",
+      ".github/.tools/**",
+      "project/**",
+      "tasks/**"
+    ],
+    "safety_boundary": "Public repo remains public-readonly plus paper/watch; no Binance keys, no signed requests, no account reads, no real orders."
+  },
+  "agent_role_profiles": [
+    {
+      "id": "discretionary_futures_trader",
+      "kind": "paper_research_trader_profile",
+      "path": ".github/resources/agent_soft_layer/profiles/discretionary-futures-trader.zh.md",
+      "bundle_command": "bash .github/scripts/run-tradecat.sh soft-layer --json",
+      "contract_schema": "tradecat_auto.agent_soft_layer.v1",
+      "activation": "Use only as Agent/Hermes soft prompt for public-readonly market research and paper/watch thesis generation.",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "Soft role configuration only; deterministic context-audit, risk, paper ledger, and local kill switch remain authoritative."
+    }
+  ],
+  "command_risk_classes": {
+    "local_readonly": "Reads local tracked files or ignored runtime metadata only.",
+    "network_readonly": "Reads public network resources only.",
+    "paper_runtime_write": "Writes local paper runtime state, ledger, JSONL archive, SQLite audit journal, pid, or logs only.",
+    "security_or_supply_chain": "Runs scanners or dependency audits."
+  },
+  "preferred_readonly_entrypoints": [
+    {
+      "command": "python3 .github/scripts/request.py --datasets --format json",
+      "risk_class": "network_readonly",
+      "schema": "tradecat.request_dataset_list.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "python3 .github/scripts/request.py signal_flow --format json --limit 5",
+      "risk_class": "network_readonly",
+      "schema": "tradecat.request_result.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "python3 .github/scripts/request.py anomaly_panel --format json --limit 0",
+      "risk_class": "network_readonly",
+      "schema": "tradecat.request_result.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/binance-public-snapshot.sh --symbols BTCUSDT,ETHUSDT --json",
+      "risk_class": "network_readonly",
+      "schema": "tradecat_auto.public_market_snapshot.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/binance-public-bundle.sh --symbols BTCUSDT,ETHUSDT --json",
+      "risk_class": "network_readonly",
+      "schema": "tradecat_auto.public_market_bundle_batch.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh agent-market-context --symbol BTCUSDT --json",
+      "risk_class": "network_readonly",
+      "schema": "tradecat_auto.agent_market_context.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh soft-layer --json",
+      "risk_class": "local_readonly",
+      "schema": "tradecat_auto.agent_soft_layer.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh context-audit --input /path/to/agent-market-context.json --json",
+      "risk_class": "local_readonly",
+      "schema": "tradecat_auto.agent_market_context_audit.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh paper-report --json",
+      "risk_class": "local_readonly",
+      "schema": "tradecat_auto.paper_report.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh latest-cycle --json",
+      "risk_class": "local_readonly",
+      "schema": "tradecat_auto.latest_cycle_report.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh latest-decision --json",
+      "risk_class": "local_readonly",
+      "schema": "tradecat_auto.latest_decision_report.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/start-auto-paper.sh status --json",
+      "risk_class": "local_readonly",
+      "schema": "tradecat_auto.paper_service_status.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/start-auto-paper.sh ops-check --json",
+      "risk_class": "local_readonly",
+      "schema": "tradecat_auto.paper_ops_report.v1",
+      "schema_version": "1.0.0"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh strategy-review --ledger-path .github/.runtime/auto-paper/paper_ledger.json --archive-path .github/.runtime/auto-paper/cycles.jsonl --json",
+      "risk_class": "local_readonly",
+      "schema": "tradecat_auto.strategy_review_report.v1",
+      "schema_version": "1.0.0"
+    }
+  ],
+  "preferred_mutating_entrypoints": [
+    {
+      "command": "bash .github/scripts/run-tradecat.sh run-context --input /path/to/agent-market-context.json --mode paper --json",
+      "risk_class": "paper_runtime_write",
+      "schema": "tradecat_auto.run_once_report.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh run-loop --mode paper --agent-trade-thesis-path /path/to/agent_trade_thesis.json --once --json",
+      "risk_class": "paper_runtime_write",
+      "schema": "tradecat_auto.service_cycle.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false
+    },
+    {
+      "command": "bash .github/scripts/start-auto-paper.sh start --json",
+      "risk_class": "paper_runtime_write",
+      "schema": "tradecat_auto.paper_service_status.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false
+    },
+    {
+      "command": "bash .github/scripts/start-auto-paper.sh stop --json",
+      "risk_class": "paper_runtime_write",
+      "schema": "tradecat_auto.paper_service_status.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh strategy-review --ledger-path .github/.runtime/auto-paper/paper_ledger.json --archive-path .github/.runtime/auto-paper/cycles.jsonl --output-state-path .github/.runtime/auto-paper/strategy_state.json --json",
+      "risk_class": "paper_runtime_write",
+      "schema": "tradecat_auto.strategy_review_report.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false
+    }
+  ],
+  "network_entrypoints": [
+    {
+      "command": "python3 .github/scripts/request.py signal_flow --format json --limit 5",
+      "risk_class": "network_readonly"
+    },
+    {
+      "command": "python3 .github/scripts/request.py anomaly_panel --format json --limit 0",
+      "risk_class": "network_readonly"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh market-universe --json",
+      "risk_class": "network_readonly",
+      "schema": "tradecat_auto.market_universe.v1"
+    }
+  ],
+  "interactive_entrypoints": [],
+  "json_outputs": [
+    {
+      "schema": "tradecat.request_result.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-request-result.schema.json"
+    },
+    {
+      "schema": "tradecat.request_dataset_list.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-request-dataset-list.schema.json"
+    },
+    {
+      "schema": "tradecat.dataset_consumption_contract.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-dataset-consumption-contract.schema.json"
+    },
+    {
+      "schema": "tradecat_auto.sheet_events.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-source-payload.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public online-sheet signal source only; no Binance keys, no signed requests, no real orders"
+    },
+    {
+      "schema": "tradecat_auto.signal_flow_events.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-source-payload.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public online-sheet signal source only; no Binance keys, no signed requests, no real orders"
+    },
+    {
+      "schema": "tradecat_auto.anomaly_symbols.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-source-payload.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public online-sheet signal source only; no Binance keys, no signed requests, no real orders"
+    },
+    {
+      "schema": "tradecat_auto.signal_events.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-source-payload.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public online-sheet signal source only; no Binance keys, no signed requests, no real orders"
+    },
+    {
+      "schema": "tradecat_auto.anomaly_signal_events.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-source-payload.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public online-sheet signal source only; no Binance keys, no signed requests, no real orders"
+    },
+    {
+      "schema": "tradecat_auto.source_error.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-source-payload.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public online-sheet signal source only; no Binance keys, no signed requests, no real orders"
+    },
+    {
+      "schema": "tradecat_auto.agent_market_context_audit.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-market-context-audit.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.agent_market_context.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-market-context.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.agent_research_cycle.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-research-cycle.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.agent_soft_layer.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-soft-layer.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.agent_trade_thesis.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-trade-thesis.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.audit_journal_summary.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-audit-journal-summary.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.audit_journal_write.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-audit-journal-write.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.audited_intent_handoff.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-audited-intent-handoff.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.daily_paper_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-daily-paper-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.latest_cycle_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-latest-cycle-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.latest_decision_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-latest-decision-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.decision_quality_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-decision-quality-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.decision_trace_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-decision-trace-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.market_universe.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-market-universe.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.public_market_snapshot.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-public-market-snapshot.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_account_state.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-account-state.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_autonomy_profile.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-autonomy-profile.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_backtest_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-backtest-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_ops_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-ops-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_service_status.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-service-status.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.portfolio_risk_policy.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-portfolio-risk-policy.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.position_management_action_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-position-management-action-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.position_management_thesis.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-position-management-thesis.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.production_health.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-production-health.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.public_probe.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-public-probe.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.replay_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-replay-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.run_once_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-run-once-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.service_cycle.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-service-cycle.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.telegram_alerts.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-telegram-alerts.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    }
+  ],
+  "automation_output_contracts": [
+    {
+      "schema": "tradecat_auto.agent_market_context_audit.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-market-context-audit.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.agent_market_context.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-market-context.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.agent_research_cycle.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-research-cycle.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.agent_soft_layer.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-soft-layer.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.agent_trade_thesis.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-agent-trade-thesis.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.audit_journal_summary.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-audit-journal-summary.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.audit_journal_write.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-audit-journal-write.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.audited_intent_handoff.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-audited-intent-handoff.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.daily_paper_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-daily-paper-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.latest_cycle_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-latest-cycle-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.latest_decision_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-latest-decision-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.decision_quality_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-decision-quality-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.decision_trace_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-decision-trace-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.market_universe.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-market-universe.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.public_market_snapshot.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-public-market-snapshot.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_account_state.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-account-state.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_autonomy_profile.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-autonomy-profile.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_backtest_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-backtest-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_ops_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-ops-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.paper_service_status.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-service-status.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.portfolio_risk_policy.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-portfolio-risk-policy.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.position_management_action_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-position-management-action-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.position_management_thesis.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-position-management-thesis.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.production_health.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-production-health.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.public_probe.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-public-probe.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.replay_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-replay-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.run_once_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-run-once-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.service_cycle.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-service-cycle.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.telegram_alerts.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-telegram-alerts.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.public_market_bundle_batch.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-public-market-bundle-batch.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.strategy_review_report.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-strategy-review-report.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    },
+    {
+      "schema": "tradecat_auto.strategy_state.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-strategy-state.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "safety_boundary": "public-readonly market data plus local paper/watch runtime only"
+    }
+  ],
+  "automation_entrypoints": [
+    {
+      "command": "bash .github/scripts/run-tradecat.sh soft-layer --json",
+      "schema": "tradecat_auto.agent_soft_layer.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "agent_soft_layer"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh context-audit --input /path/to/agent-market-context.json --json",
+      "schema": "tradecat_auto.agent_market_context_audit.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "canonical_agent_market_context"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh run-context --input /path/to/agent-market-context.json --mode paper --json",
+      "schema": "tradecat_auto.run_once_report.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "paper_execution_from_agent_context"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh paper-report --json",
+      "schema": "tradecat_auto.paper_report.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "paper_ledger_report"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh health-report --json",
+      "schema": "tradecat_auto.production_health.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "runtime_health"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh daily-report --json",
+      "schema": "tradecat_auto.daily_paper_report.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "daily_report"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh alert-payload --kind daily --json",
+      "schema": "tradecat_auto.telegram_alerts.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "alert_payload"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh market-universe --json",
+      "schema": "tradecat_auto.market_universe.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": false,
+      "contract_role": "legacy_public_probe"
+    },
+    {
+      "command": "bash .github/scripts/run-tradecat.sh probe-public --json",
+      "schema": "tradecat_auto.public_probe.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": false,
+      "contract_role": "legacy_public_probe"
+    },
+    {
+      "command": "bash .github/scripts/start-auto-paper.sh status --json",
+      "schema": "tradecat_auto.paper_service_status.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "runtime_status"
+    },
+    {
+      "command": "GET /api/snapshot from python3 .github/scripts/serve-auto-paper-monitor.py --host 127.0.0.1 --port 8765",
+      "schema": "tradecat_auto.paper_web_monitor_snapshot.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-web-monitor-snapshot.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": false,
+      "contract_role": "local_web_monitor_snapshot"
+    },
+    {
+      "command": "GET /api/snapshot decision_text from python3 .github/scripts/serve-auto-paper-monitor.py --host 127.0.0.1 --port 8765",
+      "schema": "tradecat_auto.paper_web_monitor_decision_text.v1",
+      "schema_version": "1.0.0",
+      "schema_file": ".github/contracts/tradecat-auto-paper-web-monitor-decision-text.schema.json",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": false,
+      "contract_role": "local_web_monitor_decision_text"
+    },
+    {
+      "command": "bash .github/scripts/start-auto-paper.sh ops-check --json",
+      "schema": "tradecat_auto.paper_ops_report.v1",
+      "schema_version": "1.0.0",
+      "real_orders": false,
+      "signed_requests": false,
+      "reads_api_keys": false,
+      "agent_default": true,
+      "contract_role": "ops_preflight"
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "bash .github/scripts/agent-smoke.sh",
+      "risk_class": "local_readonly"
+    },
+    {
+      "command": "bash .github/scripts/verify.sh",
+      "risk_class": "local_readonly"
+    },
+    {
+      "command": "bash .github/scripts/validate-skill.sh --strict",
+      "risk_class": "local_readonly"
+    },
+    {
+      "command": "bash .github/scripts/security-scan.sh",
+      "risk_class": "security_or_supply_chain"
+    },
+    {
+      "command": "bash .github/scripts/supply-chain-audit.sh",
+      "risk_class": "security_or_supply_chain"
+    },
+    {
+      "command": "python3 .github/scripts/validate_dependency_policy.py",
+      "risk_class": "security_or_supply_chain"
+    },
+    {
+      "command": "ruff format --check .github/src .github/tests .github/scripts",
+      "risk_class": "local_readonly"
+    },
+    {
+      "command": "git diff --check",
+      "risk_class": "local_readonly"
+    }
+  ],
+  "high_risk_commands": [
+    {
+      "command": "git push",
+      "reason": "remote publication requires explicit user request"
+    },
+    {
+      "command": "real Binance order/account/leverage/margin endpoints",
+      "reason": "forbidden in public repo"
+    }
+  ],
+  "important_paths": {
+    "skill_entry": ".github/skills/tradecat-public/SKILL.md",
+    "agent_manifest": ".github/skills/tradecat-public/agents/manifest.json",
+    "project_readme": "README.md",
+    "project_agents": "AGENTS.md",
+    "contributing": "CONTRIBUTING.md",
+    "changelog": "CHANGELOG.md",
+    "license": "LICENSE",
+    "architecture_doc": ".github/docs/ARCHITECTURE.md",
+    "deployment_doc": ".github/docs/deployment.md",
+    "configuration_doc": ".github/docs/configuration.md",
+    "release_doc": ".github/docs/release.md",
+    "clean_hermes_container_compose": "compose.tradecat-hermes.yml",
+    "clean_hermes_container_dockerfile": ".github/docker/tradecat-hermes-clean/Dockerfile",
+    "clean_hermes_container_guide": ".github/docker/tradecat-hermes-clean/README.md",
+    "clean_hermes_container_script": ".github/scripts/tradecat-hermes-container.sh",
+    "pr_template": ".github/pull_request_template.md",
+    "codeowners": ".github/CODEOWNERS",
+    "dependabot": ".github/dependabot.yml",
+    "formal_contract_schemas": ".github/contracts",
+    "project_source": ".github/src",
+    "source_adapter": ".github/src/tradecat_sources",
+    "automation_source": ".github/src/tradecat_auto",
+    "dataset_registry": ".github/src/tradecat_sources/dataset_registry.json",
+    "dataset_consumption_contract": ".github/src/tradecat_sources/dataset_consumption_contract.json",
+    "zero_install_request": ".github/scripts/request.py",
+    "agent_smoke": ".github/scripts/agent-smoke.sh",
+    "automation_service_script": ".github/scripts/start-auto-paper.sh",
+    "automation_monitor_script": ".github/scripts/serve-auto-paper-monitor.py",
+    "dependency_policy_script": ".github/scripts/validate_dependency_policy.py",
+    "automation_runtime": ".github/.runtime/auto-paper",
+    "agent_market_context_resources": ".github/resources/agent_market_context/binance",
+    "agent_market_context_provenance": ".github/resources/agent_market_context/binance/provenance.manifest.json",
+    "agent_soft_layer_resources": ".github/resources/agent_soft_layer",
+    "agent_soft_layer_trader_profile": ".github/resources/agent_soft_layer/profiles/discretionary-futures-trader.zh.md",
+    "private_executor_boundary_reference": ".github/skills/tradecat-public/references/private-executor-boundary.md",
+    "audited_intent_handoff_schema": ".github/contracts/tradecat-auto-audited-intent-handoff.schema.json",
+    "automation_state_path": ".github/.runtime/auto-paper/service_state.json",
+    "automation_paper_ledger": ".github/.runtime/auto-paper/paper_ledger.json",
+    "automation_cycle_archive": ".github/.runtime/auto-paper/cycles.jsonl",
+    "automation_audit_journal": ".github/.runtime/auto-paper/paper_audit.sqlite3",
+    "automation_run_loop_log": ".github/.runtime/auto-paper/paper-run-loop.log",
+    "binance_public_snapshot_script": ".github/scripts/binance-public-snapshot.sh",
+    "binance_public_bundle_script": ".github/scripts/binance-public-bundle.sh",
+    "automation_strategy_state": ".github/.runtime/auto-paper/strategy_state.json",
+    "automation_strategy_review_report": ".github/.runtime/auto-paper/strategy-review-latest.json"
+  },
+  "references": [
+    ".github/skills/tradecat-public/references/index.md",
+    ".github/skills/tradecat-public/references/agent-contract.md",
+    ".github/skills/tradecat-public/references/hermes-agent-guide.md",
+    ".github/skills/tradecat-public/references/private-executor-boundary.md",
+    ".github/skills/tradecat-public/references/autonomous-paper-ops.md",
+    ".github/skills/tradecat-public/references/dataset-consumption-contract.md"
+  ],
+  "known_failure_modes": [
+    {
+      "code": "remote_timeout",
+      "kind": "network",
+      "retryable": true
+    },
+    {
+      "code": "remote_http_status",
+      "kind": "http",
+      "retryable": true
+    },
+    {
+      "code": "invalid_request",
+      "kind": "validation",
+      "retryable": false
+    },
+    {
+      "code": "invalid_cli_input",
+      "kind": "operator_input",
+      "retryable": false
+    },
+    {
+      "code": "cli_runtime_error",
+      "kind": "runtime",
+      "retryable": true
+    },
+    {
+      "code": "agent_sizing_required",
+      "kind": "risk_reject",
+      "retryable": false
+    },
+    {
+      "code": "signal_not_tradable",
+      "kind": "risk_reject",
+      "retryable": false
+    },
+    {
+      "code": "paper_service_not_running",
+      "kind": "runtime",
+      "retryable": true
+    }
+  ],
+  "safe_order_of_operations": [
+    "read .github/skills/tradecat-public/agents/manifest.json",
+    "read README.md and AGENTS.md for current architecture boundary",
+    "use python3 .github/scripts/request.py signal_flow/anomaly_panel for public sheet signals",
+    "Agent/Hermes fetches Binance public-readonly context using bundled resources only",
+    "run context-audit before any paper/watch execution",
+    "run paper/watch only when Agent supplies explicit sizing, leverage, and exits",
+    "write runtime only under ignored .github/.runtime/",
+    "never read Binance keys, never sign requests, never call private account/order endpoints, never place real orders"
+  ],
+  "reference_resources": [
+    {
+      "id": "binance_skill_and_api_snapshot",
+      "path": ".github/resources/agent_market_context/binance",
+      "provenance": ".github/resources/agent_market_context/binance/provenance.manifest.json"
+    }
+  ],
+  "automation_input_contracts": [
+    {
+      "schema": "tradecat_auto.agent_market_context.v1",
+      "schema_file": ".github/contracts/tradecat-auto-agent-market-context.schema.json"
+    },
+    {
+      "schema": "tradecat_auto.agent_trade_thesis.v1",
+      "schema_file": ".github/contracts/tradecat-auto-agent-trade-thesis.schema.json"
+    },
+    {
+      "schema": "tradecat_auto.paper_autonomy_profile.v1",
+      "schema_file": ".github/contracts/tradecat-auto-paper-autonomy-profile.schema.json"
+    },
+    {
+      "schema": "tradecat_auto.portfolio_risk_policy.v1",
+      "schema_file": ".github/contracts/tradecat-auto-portfolio-risk-policy.schema.json"
+    }
+  ]
+}

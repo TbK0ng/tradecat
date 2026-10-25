@@ -1,0 +1,306 @@
+from __future__ import annotations
+
+import hashlib
+from datetime import UTC, datetime
+from typing import Any
+
+from tradecat_auto.safety_boundary import paper_watch_report_flags, paper_watch_safety_boundary
+
+
+def open_paper_position(
+    signal: dict[str, Any],
+    risk_decision: dict[str, Any],
+    enrichment: dict[str, Any],
+    *,
+    requested_notional_usdt: float | None = None,
+    requested_margin_usdt: float | None = None,
+    paper_leverage: float | None = None,
+    sizing_source: str = "agent_supplied_or_explicit",
+    strategy_intent: dict[str, Any] | None = None,
+    allow_multiple_open_positions_per_symbol: bool = False,
+    max_concurrent_positions_per_symbol: int | None = None,
+    execution_cost_model: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    preflight = _open_position_preflight(signal, risk_decision, enrichment, execution_cost_model)
+    if not preflight["ok"]:
+        return _rejected(signal, risk_decision, preflight["reasons"])
+    sizing = _open_position_sizing(
+        risk_decision=risk_decision,
+        requested_notional_usdt=requested_notional_usdt,
+        requested_margin_usdt=requested_margin_usdt,
+        paper_leverage=paper_leverage,
+    )
+    if not sizing["ok"]:
+        return _rejected(signal, risk_decision, sizing["reasons"])
+    context = _open_position_context(
+        signal=signal,
+        enrichment=enrichment,
+        risk_decision=risk_decision,
+        strategy_intent=strategy_intent,
+        allow_multiple_open_positions_per_symbol=allow_multiple_open_positions_per_symbol,
+        max_concurrent_positions_per_symbol=max_concurrent_positions_per_symbol,
+        sizing_source=sizing_source,
+        cost_model=preflight["cost_model"],
+        preflight=preflight,
+        sizing=sizing,
+    )
+    return _open_position_payload(context)
+
+
+def _open_position_preflight(
+    signal: dict[str, Any],
+    risk_decision: dict[str, Any],
+    enrichment: dict[str, Any],
+    execution_cost_model: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if risk_decision.get("decision") != "ALLOW":
+        return {"ok": False, "reasons": ["risk_decision_not_allow"]}
+    if risk_decision.get("mode") != "paper":
+        return {"ok": False, "reasons": ["paper_mode_required"]}
+    side = str(signal.get("direction") or "").upper().strip()
+    if not signal.get("tradable_candidate") or side not in {"LONG", "SHORT"}:
+        return {"ok": False, "reasons": ["signal_not_tradable"]}
+    metrics = enrichment.get("metrics") if isinstance(enrichment.get("metrics"), dict) else {}
+    raw_entry_price = _num(metrics.get("last_price"))
+    cost_model = execution_cost_model if isinstance(execution_cost_model, dict) else {}
+    entry_price = _num(cost_model.get("estimated_fill_price")) or raw_entry_price
+    if not entry_price or entry_price <= 0:
+        return {"ok": False, "reasons": ["missing_entry_price"]}
+    return {
+        "ok": True,
+        "side": side,
+        "raw_entry_price": raw_entry_price,
+        "entry_price": entry_price,
+        "cost_model": cost_model,
+    }
+
+
+def _open_position_sizing(
+    *,
+    risk_decision: dict[str, Any],
+    requested_notional_usdt: float | None,
+    requested_margin_usdt: float | None,
+    paper_leverage: float | None,
+) -> dict[str, Any]:
+    requested_notional = _num(requested_notional_usdt)
+    leverage = _positive_float(paper_leverage)
+    if requested_notional is None or requested_notional <= 0 or leverage is None:
+        return {"ok": False, "reasons": ["agent_sizing_required"]}
+    max_notional = _num(risk_decision.get("max_notional_usdt"))
+    notional = (
+        min(requested_notional, max_notional) if max_notional is not None and max_notional > 0 else requested_notional
+    )
+    if notional <= 0:
+        return {"ok": False, "reasons": ["non_positive_notional"]}
+    requested_margin = _num(requested_margin_usdt)
+    margin = notional / leverage if leverage > 0 else requested_margin
+    return {
+        "ok": True,
+        "requested_notional": requested_notional,
+        "requested_margin": requested_margin,
+        "notional": notional,
+        "margin": margin,
+        "leverage": leverage,
+    }
+
+
+def _open_position_context(
+    *,
+    signal: dict[str, Any],
+    enrichment: dict[str, Any],
+    risk_decision: dict[str, Any],
+    strategy_intent: dict[str, Any] | None,
+    allow_multiple_open_positions_per_symbol: bool,
+    max_concurrent_positions_per_symbol: int | None,
+    sizing_source: str,
+    cost_model: dict[str, Any],
+    preflight: dict[str, Any],
+    sizing: dict[str, Any],
+) -> dict[str, Any]:
+    exit_plan = _exit_plan_from_strategy_intent(strategy_intent)
+    opened_at = _now_iso()
+    symbol = str(signal.get("symbol") or enrichment.get("symbol") or "")
+    max_concurrent = _positive_int(max_concurrent_positions_per_symbol)
+    allow_multiple = bool(
+        allow_multiple_open_positions_per_symbol or (max_concurrent is not None and max_concurrent > 1)
+    )
+    return {
+        "signal": signal,
+        "risk_decision": risk_decision,
+        "symbol": symbol,
+        "side": preflight["side"],
+        "opened_at": opened_at,
+        "entry_price": preflight["entry_price"],
+        "raw_entry_price": preflight["raw_entry_price"],
+        "quantity": sizing["notional"] / preflight["entry_price"],
+        "sizing": sizing,
+        "sizing_source": sizing_source,
+        "exit_plan": exit_plan,
+        "allow_multiple": allow_multiple,
+        "max_concurrent": max_concurrent,
+        "cost_model": cost_model,
+    }
+
+
+def _open_position_payload(context: dict[str, Any]) -> dict[str, Any]:
+    signal = context["signal"]
+    sizing = context["sizing"]
+    cost_model = context["cost_model"]
+    return {
+        "schema": "tradecat_auto.paper_execution_report.v1",
+        "schema_version": "1.0.0",
+        "ok": True,
+        **paper_watch_report_flags(),
+        "status": "OPENED",
+        "error_code": None,
+        "paper_execution_id": _execution_id(
+            context["symbol"],
+            context["side"],
+            context["opened_at"],
+            context["entry_price"],
+            context["quantity"],
+            sizing["notional"],
+        ),
+        "mode": "paper",
+        "opened_at": context["opened_at"],
+        "symbol": context["symbol"],
+        "side": context["side"],
+        "score": signal.get("score"),
+        "entry_price": context["entry_price"],
+        "raw_entry_price": context["raw_entry_price"],
+        "quantity": context["quantity"],
+        "notional_usdt": sizing["notional"],
+        "requested_notional_usdt": sizing["requested_notional"],
+        "requested_margin_usdt": sizing["requested_margin"],
+        "margin_usdt": sizing["margin"],
+        "leverage": sizing["leverage"],
+        "sizing_source": str(context["sizing_source"] or "agent_supplied_or_explicit"),
+        **_exit_plan_payload(context["exit_plan"]),
+        "allow_multiple_open_positions_per_symbol": context["allow_multiple"],
+        "max_concurrent_positions_per_symbol": context["max_concurrent"],
+        "execution_cost_model": cost_model,
+        "paper_fee_bps": _num(cost_model.get("fee_bps")),
+        "paper_fee_model": cost_model.get("fee_model"),
+        "liquidity_role": cost_model.get("liquidity_role"),
+        "entry_price_source": cost_model.get("price_source"),
+        "entry_price_includes_slippage": bool(cost_model.get("fill_price_includes_slippage")),
+        "risk_decision": context["risk_decision"],
+        "provenance": {
+            "source": "tradecat_auto.paper_broker.open_paper_position",
+            "entry_price_source": cost_model.get("price_source") or "market_enrichment.metrics.last_price",
+            "sizing_source": str(context["sizing_source"] or "agent_supplied_or_explicit"),
+        },
+        "safety": _safety_boundary(),
+        "limitations": ["paper simulation only; no exchange order was placed"],
+    }
+
+
+def _exit_plan_payload(exit_plan: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "stop_loss_price": exit_plan["stop_loss_price"],
+        "take_profit_price": exit_plan["take_profit_price"],
+        "max_holding_minutes": exit_plan["max_holding_minutes"],
+        "exit_management": exit_plan["exit_management"],
+        "exit_plan_source": exit_plan["exit_plan_source"],
+        "exit_rationale": exit_plan["exit_rationale"],
+    }
+
+
+def close_paper_position(position: dict[str, Any], *, exit_price: float) -> dict[str, Any]:
+    if position.get("status") != "OPENED":
+        return {**position, "status": "REJECTED", "reasons": ["position_not_open"]}
+    entry = float(position.get("entry_price") or 0)
+    quantity = float(position.get("quantity") or 0)
+    side = str(position.get("side") or "").upper()
+    exit_value = float(exit_price)
+    if side == "LONG":
+        pnl = (exit_value - entry) * quantity
+    elif side == "SHORT":
+        pnl = (entry - exit_value) * quantity
+    else:
+        pnl = 0.0
+    notional = float(position.get("notional_usdt") or 0)
+    return {
+        **position,
+        "status": "CLOSED",
+        "closed_at": _now_iso(),
+        "exit_price": exit_value,
+        "pnl_usdt": pnl,
+        "pnl_pct_on_notional": (pnl / notional * 100) if notional else 0.0,
+    }
+
+
+def _rejected(signal: dict[str, Any], risk_decision: dict[str, Any], reasons: list[str]) -> dict[str, Any]:
+    return {
+        "schema": "tradecat_auto.paper_execution_report.v1",
+        "schema_version": "1.0.0",
+        "ok": False,
+        **paper_watch_report_flags(),
+        "status": "REJECTED",
+        "error_code": str(reasons[0] if reasons else "paper_execution_rejected"),
+        "mode": risk_decision.get("mode", "paper"),
+        "symbol": str(signal.get("symbol") or ""),
+        "side": signal.get("direction", "WATCH_ONLY"),
+        "reasons": reasons,
+        "risk_decision": risk_decision,
+        "provenance": {"source": "tradecat_auto.paper_broker.open_paper_position"},
+        "safety": _safety_boundary(),
+        "limitations": ["paper simulation only; no exchange order was placed"],
+    }
+
+
+def _exit_plan_from_strategy_intent(strategy_intent: dict[str, Any] | None) -> dict[str, Any]:
+    intent = strategy_intent if isinstance(strategy_intent, dict) else {}
+    stop_loss = _num(intent.get("invalidation_price"))
+    take_profit = _num(intent.get("take_profit_price"))
+    max_holding = _num(intent.get("max_holding_minutes"))
+    if max_holding is not None and max_holding <= 0:
+        max_holding = None
+    supplied = any(value is not None for value in (stop_loss, take_profit, max_holding))
+    return {
+        "stop_loss_price": stop_loss,
+        "take_profit_price": take_profit,
+        "max_holding_minutes": max_holding,
+        "exit_management": str(intent.get("exit_management") or "agent_supplied") if supplied else "agent_managed",
+        "exit_plan_source": str(intent.get("exit_plan_source") or "agent_trade_thesis")
+        if supplied
+        else "agent_required_missing",
+        "exit_rationale": intent.get("exit_rationale") if supplied else None,
+    }
+
+
+def _num(value: Any) -> float | None:
+    try:
+        if value is None or value == "":
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _positive_float(value: Any) -> float | None:
+    numeric = _num(value)
+    return numeric if numeric is not None and numeric > 0 else None
+
+
+def _positive_int(value: Any) -> int | None:
+    try:
+        if value is None or value == "":
+            return None
+        numeric = int(value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if numeric > 0 else None
+
+
+def _execution_id(symbol: str, side: str, opened_at: str, entry_price: float, quantity: float, notional: float) -> str:
+    material = f"{symbol}\n{side}\n{opened_at}\n{entry_price:.12f}\n{quantity:.12f}\n{notional:.12f}"
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
+def _safety_boundary() -> dict[str, bool]:
+    return paper_watch_safety_boundary()
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")

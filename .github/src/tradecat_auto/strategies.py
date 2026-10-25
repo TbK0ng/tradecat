@@ -1,0 +1,191 @@
+from __future__ import annotations
+
+from typing import Any
+
+from tradecat_auto.safety_boundary import paper_watch_safety_boundary
+
+
+def build_strategy_intent(
+    signal: dict[str, Any],
+    enrichment: dict[str, Any],
+    *,
+    agent_trade_thesis: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    context = _strategy_context(signal, enrichment, agent_trade_thesis)
+    if not context["tradable"] or not context["entry_price"] or context["entry_price"] <= 0:
+        return _watch_strategy_intent(context)
+    return _enter_strategy_intent(context, _agent_exit_plan(agent_trade_thesis))
+
+
+def _strategy_context(
+    signal: dict[str, Any],
+    enrichment: dict[str, Any],
+    agent_trade_thesis: dict[str, Any] | None,
+) -> dict[str, Any]:
+    symbol = str(signal.get("symbol") or enrichment.get("symbol") or "").upper().strip()
+    direction = str(signal.get("direction") or "WATCH_ONLY").upper().strip()
+    do_not_trade = [str(item) for item in signal.get("do_not_trade_reasons") or [] if str(item)]
+    tradable = bool(signal.get("tradable_candidate") and direction in {"LONG", "SHORT"} and not do_not_trade)
+    metrics = enrichment.get("metrics") if isinstance(enrichment.get("metrics"), dict) else {}
+    entry_price = _num(metrics.get("last_price"))
+    return {
+        "signal": signal,
+        "enrichment": enrichment,
+        "agent_trade_thesis": agent_trade_thesis,
+        "symbol": symbol,
+        "direction": direction,
+        "do_not_trade": do_not_trade,
+        "tradable": tradable,
+        "metrics": metrics,
+        "entry_price": entry_price,
+        "confidence_score": _num(signal.get("score")) or 0.0,
+    }
+
+
+def _watch_strategy_intent(context: dict[str, Any]) -> dict[str, Any]:
+    do_not_trade_reasons = context["do_not_trade"] or ["signal_not_tradable"]
+    return _strategy_payload(
+        context,
+        action="WATCH",
+        direction="WATCH_ONLY",
+        error_code=do_not_trade_reasons[0],
+        entry_type=None,
+        entry_price=None,
+        exit_plan=_watch_exit_plan(),
+        do_not_trade_reasons=do_not_trade_reasons,
+    )
+
+
+def _enter_strategy_intent(context: dict[str, Any], exit_plan: dict[str, Any]) -> dict[str, Any]:
+    return _strategy_payload(
+        context,
+        action="ENTER",
+        direction=context["direction"],
+        error_code=None,
+        entry_type="MARKET_PAPER",
+        entry_price=context["entry_price"],
+        exit_plan=exit_plan,
+        do_not_trade_reasons=[],
+    )
+
+
+def _strategy_payload(
+    context: dict[str, Any],
+    *,
+    action: str,
+    direction: str,
+    error_code: str | None,
+    entry_type: str | None,
+    entry_price: float | None,
+    exit_plan: dict[str, Any],
+    do_not_trade_reasons: list[str],
+) -> dict[str, Any]:
+    signal = context["signal"]
+    metrics = context["metrics"]
+    return {
+        "schema": "tradecat_auto.strategy_intent.v1",
+        "schema_version": "1.0.0",
+        "ok": True,
+        "error_code": error_code,
+        "symbol": context["symbol"],
+        "action": action,
+        "direction": direction,
+        "confidence_score": context["confidence_score"],
+        "entry_type": entry_type,
+        "entry_price": entry_price,
+        "invalidation_price": exit_plan["invalidation_price"],
+        "take_profit_price": exit_plan["take_profit_price"],
+        "max_holding_minutes": exit_plan["max_holding_minutes"],
+        "exit_management": exit_plan["exit_management"],
+        "exit_plan_source": exit_plan["exit_plan_source"],
+        "exit_rationale": exit_plan["exit_rationale"],
+        "strategy_tags": _strategy_tags(signal, metrics),
+        "do_not_trade_reasons": do_not_trade_reasons,
+        "explanation": _explanation(signal, metrics),
+        "provenance": _provenance(signal, context["enrichment"], context["agent_trade_thesis"]),
+        "safety": paper_watch_safety_boundary(),
+        "limitations": ["strategy intent only; not an order and not investment advice"],
+    }
+
+
+def _watch_exit_plan() -> dict[str, Any]:
+    return {
+        "invalidation_price": None,
+        "take_profit_price": None,
+        "max_holding_minutes": None,
+        "exit_management": "watch_only",
+        "exit_plan_source": None,
+        "exit_rationale": None,
+    }
+
+
+def _provenance(
+    signal: dict[str, Any],
+    enrichment: dict[str, Any],
+    agent_trade_thesis: dict[str, Any] | None,
+) -> dict[str, Any]:
+    thesis = agent_trade_thesis if isinstance(agent_trade_thesis, dict) else {}
+    return {
+        "source": "tradecat_auto.strategies.build_strategy_intent",
+        "signal_schema": str(signal.get("schema") or ""),
+        "enrichment_schema": str(enrichment.get("schema") or ""),
+        "agent_trade_thesis_schema": str(thesis.get("schema") or ""),
+        "agent_trade_thesis_source": str(thesis.get("source") or ""),
+    }
+
+
+def _strategy_tags(signal: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+    tags: list[str] = []
+    positives = {str(item) for item in signal.get("positive_factors") or []}
+    price_change = _num(metrics.get("price_change_24h_pct")) or 0.0
+    taker_ratio = _num(metrics.get("taker_buy_sell_ratio"))
+    if abs(price_change) >= 10 or "large_24h_price_move" in positives or "moderate_24h_price_move" in positives:
+        tags.append("momentum_breakout")
+    if taker_ratio is not None and (taker_ratio >= 1.05 or taker_ratio <= 0.95):
+        tags.append("taker_flow_bias")
+    if any("long_short" in item for item in positives):
+        tags.append("positioning_bias")
+    if not tags:
+        tags.append("watchlist_candidate")
+    return list(dict.fromkeys(tags))
+
+
+def _explanation(signal: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "positive_factors": list(signal.get("positive_factors") or []),
+        "negative_factors": list(signal.get("negative_factors") or []),
+        "metrics_used": {
+            "price_change_24h_pct": metrics.get("price_change_24h_pct"),
+            "spread_bps": metrics.get("spread_bps"),
+            "quote_volume_24h": metrics.get("quote_volume_24h"),
+            "taker_buy_sell_ratio": metrics.get("taker_buy_sell_ratio"),
+            "global_long_short_account_ratio": metrics.get("global_long_short_account_ratio"),
+        },
+    }
+
+
+def _agent_exit_plan(agent_trade_thesis: dict[str, Any] | None) -> dict[str, Any]:
+    thesis = agent_trade_thesis if isinstance(agent_trade_thesis, dict) else {}
+    invalidation = _num(thesis.get("invalidation_price"))
+    take_profit = _num(thesis.get("take_profit_price"))
+    max_holding = _num(thesis.get("max_holding_minutes"))
+    if max_holding is not None and max_holding <= 0:
+        max_holding = None
+    supplied = any(value is not None for value in (invalidation, take_profit, max_holding))
+    return {
+        "invalidation_price": invalidation,
+        "take_profit_price": take_profit,
+        "max_holding_minutes": max_holding,
+        "exit_management": "agent_supplied" if supplied else "agent_managed",
+        "exit_plan_source": str(thesis.get("source") or "agent_trade_thesis") if supplied else "agent_required_missing",
+        "exit_rationale": thesis.get("exit_rationale") if supplied else None,
+    }
+
+
+def _num(value: Any) -> float | None:
+    try:
+        if value is None or value == "":
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
